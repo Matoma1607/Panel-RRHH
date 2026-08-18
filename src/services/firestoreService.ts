@@ -103,6 +103,24 @@ export function subscribeDocument<T>(
   }
 }
 
+// Helper to deeply remove undefined properties which break Firestore setDoc
+function cleanFirestoreData(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) {
+    return obj.map(cleanFirestoreData);
+  }
+  if (typeof obj === 'object') {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanFirestoreData(value);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 // Save document helper
 export async function saveDocToFirestore<T extends { id?: string }>(
   collectionName: string,
@@ -111,7 +129,8 @@ export async function saveDocToFirestore<T extends { id?: string }>(
 ) {
   try {
     const docRef = doc(db, collectionName, docId);
-    await setDoc(docRef, { ...data, id: docId }, { merge: true });
+    const cleaned = cleanFirestoreData({ ...data, id: docId });
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${collectionName}/${docId}`);
   }
@@ -131,7 +150,8 @@ export async function deleteDocFromFirestore(collectionName: string, docId: stri
 export async function saveSingleConfig<T>(collectionName: string, docId: string, data: T) {
   try {
     const docRef = doc(db, collectionName, docId);
-    await setDoc(docRef, data as any, { merge: true });
+    const cleaned = cleanFirestoreData(data);
+    await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${collectionName}/${docId}`);
   }
