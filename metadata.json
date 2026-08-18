@@ -1,0 +1,6 @@
+{
+  "name": "SOLMAR - Portal RRHH",
+  "description": "Plataforma de comunicación interna y gestión para Óptica SOLMAR. Novedades y comunicados oficiales, documentos y manuales PDF, y festejos con felicitaciones.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

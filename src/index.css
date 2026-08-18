@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #38484c;
+  --color-brand-mid: #5c6c6c;
+  --color-brand-light: #a6b2b1;
+  --color-brand-soft: #f2f5f5;
+  --color-brand-border: #d2d9d8;
+}
+
+/* Prevent horizontal overflow on mobile devices */
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+/* Ensure images, graphics and tables do not exceed container bounds */
+img, video, canvas, svg {
+  max-width: 100%;
+}
+
+/* Custom background tinting and brand utility helpers */
+body {
+  background-color: #f6f8f8;
+  color: #38484c;
+}
+
+

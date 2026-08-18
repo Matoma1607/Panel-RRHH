@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Company news, official announcements, and notices published by HR.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "content": { "type": "string", "maxLength": 10000 },
+        "date": { "type": "string", "maxLength": 64 },
+        "category": { "type": "string", "maxLength": 64 },
+        "pinned": { "type": "boolean" },
+        "imageUrl": { "type": "string", "maxLength": 2048 },
+        "likes": { "type": "number" },
+        "author": { "type": "string", "maxLength": 128 },
+        "comments": { "type": "array" }
+      },
+      "required": ["id", "title", "content", "date", "category"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "HR document, policy manual, handbook or form template.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "category": { "type": "string", "maxLength": 100 },
+        "size": { "type": "string", "maxLength": 50 },
+        "uploadDate": { "type": "string", "maxLength": 64 },
+        "fileType": { "type": "string", "maxLength": 50 },
+        "downloadUrl": { "type": "string", "maxLength": 2048 },
+        "fileData": { "type": "string" },
+        "fileName": { "type": "string", "maxLength": 300 },
+        "downloadsCount": { "type": "number" }
+      },
+      "required": ["id", "title", "category", "uploadDate"]
+    },
+    "Celebration": {
+      "title": "Celebration",
+      "description": "Birthday or company work anniversary.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "employeeName": { "type": "string", "maxLength": 200 },
+        "avatar": { "type": "string", "maxLength": 2048 },
+        "department": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "maxLength": 50 },
+        "date": { "type": "string", "maxLength": 64 },
+        "yearsAtCompany": { "type": "number" },
+        "greetingsCount": { "type": "number" }
+      },
+      "required": ["id", "employeeName", "type", "date"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "In-app notifications for published announcements, documents and updates.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "type": { "type": "string", "maxLength": 50 },
+        "date": { "type": "string", "maxLength": 64 },
+        "read": { "type": "boolean" },
+        "linkTab": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "title", "message", "type", "date"]
+    },
+    "CompanyInfo": {
+      "title": "CompanyInfo",
+      "description": "Company metadata, contact details, and brand styling.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "slogan": { "type": "string", "maxLength": 400 },
+        "welcomeMessage": { "type": "string", "maxLength": 2000 },
+        "primaryColor": { "type": "string", "maxLength": 50 },
+        "contactHrEmail": { "type": "string", "maxLength": 200 },
+        "contactHrPhone": { "type": "string", "maxLength": 100 },
+        "portalUrl": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["name", "contactHrEmail"]
+    }
+  },
+  "firestore": {
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "Announcement" },
+      "description": "Official company announcements and notices."
+    },
+    "/documents/{documentId}": {
+      "schema": { "$ref": "Document" },
+      "description": "Corporate documents and policy files."
+    },
+    "/celebrations/{celebrationId}": {
+      "schema": { "$ref": "Celebration" },
+      "description": "Employee birthdays and work anniversaries."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "AppNotification" },
+      "description": "Portal notifications."
+    },
+    "/company/{configId}": {
+      "schema": { "$ref": "CompanyInfo" },
+      "description": "Company configuration and portal settings."
+    }
+  }
+}
