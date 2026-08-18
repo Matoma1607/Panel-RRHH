@@ -61,7 +61,7 @@ export const AnnouncementEditorModal: React.FC<Props> = ({
       const rawDataUrl = event.target?.result as string;
       const img = new window.Image();
       img.onload = () => {
-        const maxDim = 1200;
+        const maxDim = 960;
         let { width, height } = img;
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -78,7 +78,7 @@ export const AnnouncementEditorModal: React.FC<Props> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          const compressed = canvas.toDataURL('image/jpeg', 0.78);
           setImageUrl(compressed);
         } else {
           setImageUrl(rawDataUrl);
