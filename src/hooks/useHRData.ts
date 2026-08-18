@@ -116,49 +116,6 @@ export function useHRData() {
     };
   }, []);
 
-  // Auto-prune orphan notifications (e.g. notifications for deleted test items)
-  useEffect(() => {
-    if (notifications.length === 0) return;
-
-    const orphanIdsToDelete: string[] = [];
-
-    notifications.forEach((notif) => {
-      if (notif.type === 'announcement') {
-        const hasMatchingAnn = announcements.some(
-          (a) =>
-            (notif.itemId && a.id === notif.itemId) ||
-            (a.title && notif.title.toLowerCase().includes(a.title.toLowerCase()))
-        );
-        if (!hasMatchingAnn) {
-          orphanIdsToDelete.push(notif.id);
-        }
-      } else if (notif.type === 'document') {
-        const hasMatchingDoc = documents.some(
-          (d) =>
-            (notif.itemId && d.id === notif.itemId) ||
-            (d.title && notif.title.toLowerCase().includes(d.title.toLowerCase()))
-        );
-        if (!hasMatchingDoc) {
-          orphanIdsToDelete.push(notif.id);
-        }
-      } else if (notif.type === 'celebration') {
-        const hasMatchingCel = celebrations.some(
-          (c) =>
-            (notif.itemId && c.id === notif.itemId) ||
-            (c.employeeName && notif.title.toLowerCase().includes(c.employeeName.toLowerCase()))
-        );
-        if (!hasMatchingCel) {
-          orphanIdsToDelete.push(notif.id);
-        }
-      }
-    });
-
-    if (orphanIdsToDelete.length > 0) {
-      orphanIdsToDelete.forEach((id) => deleteDocFromFirestore('notifications', id));
-      setNotifications((prev) => prev.filter((n) => !orphanIdsToDelete.includes(n.id)));
-    }
-  }, [announcements, documents, celebrations, notifications.length]);
-
   // Save lightweight auth state
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ROLE, role);
