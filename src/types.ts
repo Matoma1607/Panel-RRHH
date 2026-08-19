@@ -44,10 +44,12 @@ export interface Announcement {
   targetArea?: 'Todas' | OpticsArea;
 }
 
+export type DocumentCategory = 'Reglamentos' | 'Políticas' | 'Formularios' | 'Guías' | 'General' | 'Beneficios' | 'Recibos';
+
 export interface DocumentItem {
   id: string;
   title: string;
-  category: 'Reglamentos' | 'Políticas' | 'Formularios' | 'Guías' | 'General';
+  category: DocumentCategory;
   description: string;
   fileType: 'PDF' | 'DOCX' | 'XLSX';
   fileSize: string;

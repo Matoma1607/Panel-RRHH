@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DocumentItem } from '../../types';
+import { DocumentItem, DocumentCategory } from '../../types';
 import { X, FileText, Upload, CheckCircle2, FileSpreadsheet, FileCode, Paperclip, AlertCircle, Trash2, FolderOpen } from 'lucide-react';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   editingDocument?: DocumentItem | null;
 }
 
-const CATEGORIES = ['Reglamentos', 'Políticas', 'Formularios', 'Guías', 'Beneficios', 'Recibos'] as const;
+const CATEGORIES: DocumentCategory[] = ['Reglamentos', 'Políticas', 'Formularios', 'Guías', 'General', 'Beneficios', 'Recibos'];
 
 export const DocumentEditorModal: React.FC<Props> = ({
   isOpen,
@@ -18,7 +18,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
   editingDocument,
 }) => {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Políticas');
+  const [category, setCategory] = useState<DocumentCategory>('Políticas');
   const [description, setDescription] = useState('');
   const [fileType, setFileType] = useState<'PDF' | 'DOCX' | 'XLSX'>('PDF');
   const [fileSize, setFileSize] = useState('1.5 MB');
