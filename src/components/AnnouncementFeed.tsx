@@ -338,14 +338,14 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                     {canPublish && (
                       <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
                         <button
-                          onClick={() => onEditAnnouncement(item)}
+                          onClick={() => onEditAnnouncement?.(item)}
                           title="Editar comunicado"
                           className="p-1.5 text-slate-400 hover:text-[#38484c] hover:bg-slate-100 rounded-lg transition-colors"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDeleteAnnouncement(item.id)}
+                          onClick={() => onDeleteAnnouncement?.(item.id)}
                           title="Eliminar comunicado"
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
