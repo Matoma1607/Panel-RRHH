@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DocumentItem, DocumentCategory } from '../../types';
-import { X, FileText, Upload, CheckCircle2, FileSpreadsheet, FileCode, Paperclip, AlertCircle, Trash2, FolderOpen } from 'lucide-react';
+import { DocumentItem, DocumentCategory, BranchName, ALL_BRANCHES } from '../../types';
+import { X, FileText, Upload, CheckCircle2, FileSpreadsheet, FileCode, Paperclip, AlertCircle, Trash2, FolderOpen, Building2, Lock, Globe } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -19,6 +19,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('Políticas');
+  const [targetBranch, setTargetBranch] = useState<'Todas' | BranchName>('Todas');
   const [description, setDescription] = useState('');
   const [fileType, setFileType] = useState<'PDF' | 'DOCX' | 'XLSX'>('PDF');
   const [fileSize, setFileSize] = useState('1.5 MB');
@@ -55,6 +56,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
     if (editingDocument) {
       setTitle(editingDocument.title);
       setCategory(editingDocument.category);
+      setTargetBranch(editingDocument.targetBranch || 'Todas');
       setDescription(editingDocument.description);
       setFileType(editingDocument.fileType);
       setFileSize(editingDocument.fileSize);
@@ -65,6 +67,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
     } else {
       setTitle('');
       setCategory('Políticas');
+      setTargetBranch('Todas');
       setDescription('');
       setFileType('PDF');
       setFileSize('1.8 MB');
@@ -189,6 +192,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
       id: editingDocument?.id,
       title: finalTitle,
       category,
+      targetBranch,
       description: description.trim(),
       fileType,
       fileSize,
@@ -202,7 +206,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
       onDragOver={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -213,7 +217,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
       }}
     >
       <div
-        className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-100 p-6 relative max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 p-4 sm:p-6 relative max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -227,27 +231,72 @@ export const DocumentEditorModal: React.FC<Props> = ({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Cerrar modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-4 sm:mb-5 pb-3 border-b border-slate-100 pr-8">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <Upload className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-lg">
+            <h3 className="font-bold text-slate-900 text-base sm:text-lg">
               {editingDocument ? 'Editar Documento' : 'Subir Documento (PDF o Word)'}
             </h3>
-            <p className="text-xs text-slate-500">
-              Carga un archivo oficial PDF, Word (.docx) o Excel para que los colaboradores puedan consultarlo y descargarlo.
+            <p className="text-[11px] sm:text-xs text-slate-500">
+              Carga un archivo oficial PDF, Word (.docx) o Excel y define la sucursal.
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4 text-xs">
           
+          {/* Branch Target Selector (Sucursal) */}
+          <div className="bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 space-y-2">
+            <label className="block font-bold text-slate-800 flex flex-wrap items-center justify-between gap-1.5">
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-teal-700 shrink-0" />
+                <span>Sucursal de Destino (Visibilidad)</span>
+              </span>
+              {targetBranch === 'Todas' ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
+                  <Globe className="w-3 h-3" />
+                  <span>Público General</span>
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-amber-700" />
+                  <span>Exclusivo Sucursal</span>
+                </span>
+              )}
+            </label>
+
+            <select
+              value={targetBranch}
+              onChange={(e) => setTargetBranch(e.target.value as any)}
+              className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm sm:text-xs font-semibold focus:outline-none focus:border-teal-700"
+            >
+              <option value="Todas">🌐 Todas las sucursales (Visible para todo el personal)</option>
+              {ALL_BRANCHES.map((b) => (
+                <option key={b} value={b}>
+                  📍 {b} (Solo visible para colaboradores de {b})
+                </option>
+              ))}
+            </select>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              {targetBranch === 'Todas' ? (
+                <span>Cualquier empleado de cualquier sucursal podrá consultar y descargar este documento.</span>
+              ) : (
+                <span className="text-amber-800 font-medium">
+                  🔒 Privacidad activa: Únicamente los empleados de <strong>{targetBranch}</strong> podrán acceder a este archivo.
+                </span>
+              )}
+            </p>
+          </div>
+
           {/* File Selector & Drag Area */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5">
@@ -268,7 +317,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`p-4 border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center text-center ${
+              className={`p-3.5 sm:p-4 border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center text-center ${
                 isDragging
                   ? 'border-emerald-500 bg-emerald-50 scale-[0.99]'
                   : uploadedFileName
@@ -278,7 +327,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
             >
               {uploadedFileName ? (
                 <div className="w-full space-y-3">
-                  <div className="flex items-center gap-3 w-full px-2 py-1 bg-white rounded-xl border border-emerald-200 p-2 shadow-xs">
+                  <div className="flex items-center gap-3 w-full px-2.5 py-2 bg-white rounded-xl border border-emerald-200 shadow-xs">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                       {isReadingFile ? (
                         <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
@@ -287,11 +336,11 @@ export const DocumentEditorModal: React.FC<Props> = ({
                       )}
                     </div>
                     <div className="text-left flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 text-xs truncate">
+                      <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">
                         {uploadedFileName}
                       </p>
                       <p className="text-[11px] text-emerald-700 font-medium">
-                        Formato {fileType} • {fileSize} • Archivo listo para descarga
+                        Formato {fileType} • {fileSize}
                       </p>
                     </div>
                     
@@ -299,14 +348,14 @@ export const DocumentEditorModal: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors"
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
                       >
                         Cambiar
                       </button>
                       <button
                         type="button"
                         onClick={handleRemoveFile}
-                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Quitar archivo"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -315,13 +364,13 @@ export const DocumentEditorModal: React.FC<Props> = ({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2.5 py-2 w-full flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-white shadow-xs border border-slate-200 text-[#38484c] flex items-center justify-center">
-                    <FolderOpen className="w-6 h-6 text-[#38484c]" />
+                <div className="space-y-2 py-1.5 w-full flex flex-col items-center">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-xs border border-slate-200 text-[#38484c] flex items-center justify-center">
+                    <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6 text-[#38484c]" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-xs">
-                      Arrastrá tu archivo PDF o Word aquí
+                    <p className="font-bold text-slate-800 text-xs sm:text-sm">
+                      Toca para buscar o arrastrá tu PDF/Word aquí
                     </p>
                     <p className="text-[11px] text-slate-500 mt-0.5">
                       Formatos admitidos: <span className="font-medium text-slate-700">PDF, DOCX, XLSX</span>
@@ -330,7 +379,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-xs transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-xs transition-colors cursor-pointer"
                   >
                     <Paperclip className="w-3.5 h-3.5 text-[#38484c]" />
                     <span>Seleccionar archivo desde el equipo</span>
@@ -348,8 +397,8 @@ export const DocumentEditorModal: React.FC<Props> = ({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Reglamento Interno de Trabajo 2026"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-[#38484c]"
+              placeholder="Ej: Procedimiento Operativo Sucursal 2026"
+              className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#38484c]"
             />
           </div>
 
@@ -360,7 +409,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-[#38484c]"
+                className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm sm:text-xs focus:outline-none focus:border-[#38484c]"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -375,7 +424,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
               <select
                 value={fileType}
                 onChange={(e) => setFileType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-[#38484c]"
+                className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm sm:text-xs focus:outline-none focus:border-[#38484c]"
               >
                 <option value="PDF">PDF (.pdf)</option>
                 <option value="DOCX">Word (.docx)</option>
@@ -393,7 +442,7 @@ export const DocumentEditorModal: React.FC<Props> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Indica qué información contiene y a quién está dirigido..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-[#38484c]"
+              className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm sm:text-xs focus:outline-none focus:border-[#38484c] resize-y"
             />
           </div>
 
@@ -408,23 +457,23 @@ export const DocumentEditorModal: React.FC<Props> = ({
               value={contentSnippet}
               onChange={(e) => setContentSnippet(e.target.value)}
               placeholder="Puntos clave, artículos o resumen del documento para lectura directa en pantalla..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-[#38484c]"
+              className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm sm:text-xs focus:outline-none focus:border-[#38484c] resize-y"
             />
           </div>
 
           {/* Action buttons */}
-          <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
+          <div className="pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-200 transition-colors cursor-pointer text-center"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isReadingFile}
-              className="px-4 py-2 bg-[#38484c] text-white font-semibold rounded-xl hover:bg-[#2c393c] shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto px-5 py-2.5 sm:py-2 bg-[#38484c] text-white font-semibold text-xs rounded-xl hover:bg-[#2c393c] shadow-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>{editingDocument ? 'Guardar Cambios' : 'Subir y Publicar Documento'}</span>

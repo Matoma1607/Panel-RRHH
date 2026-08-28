@@ -14,9 +14,10 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { AnnouncementEditorModal } from './components/modals/AnnouncementEditorModal';
 import { DocumentEditorModal } from './components/modals/DocumentEditorModal';
 import { CelebrationEditorModal } from './components/modals/CelebrationEditorModal';
+import { BranchSelectorModal } from './components/modals/BranchSelectorModal';
 
 // Types
-import { Announcement, DocumentItem, CelebrationItem } from './types';
+import { Announcement, DocumentItem, CelebrationItem, BranchName, ALL_BRANCHES, parseBranchFromQuery } from './types';
 
 export default function App() {
   const {
@@ -53,11 +54,63 @@ export default function App() {
   const [globalSearch, setGlobalSearch] = useState<string>('');
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
+  // Branch Selection & Permanent Lock States
+  const [isDirectBranchLink, setIsDirectBranchLink] = useState<boolean>(false);
+  const [hasConfiguredBranch, setHasConfiguredBranch] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const branchQuery = params.get('sucursal') || params.get('branch') || params.get('sede');
+      if (parseBranchFromQuery(branchQuery)) return true;
+      const saved = localStorage.getItem('solmar_user_branch');
+      if (saved && ALL_BRANCHES.includes(saved as any)) return true;
+    }
+    return false;
+  });
+
+  const [userBranch, setUserBranch] = useState<BranchName>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const branchQuery = params.get('sucursal') || params.get('branch') || params.get('sede');
+      const parsedFromQuery = parseBranchFromQuery(branchQuery);
+      if (parsedFromQuery) {
+        localStorage.setItem('solmar_user_branch', parsedFromQuery);
+        return parsedFromQuery;
+      }
+      const saved = localStorage.getItem('solmar_user_branch') as BranchName;
+      if (saved && ALL_BRANCHES.includes(saved)) {
+        return saved;
+      }
+    }
+    return 'Solmar Alem';
+  });
+
+  const [isBranchPickerOpen, setIsBranchPickerOpen] = useState<boolean>(() => {
+    // If not configured and not admin, show initial picker
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const branchQuery = params.get('sucursal') || params.get('branch') || params.get('sede');
+      if (parseBranchFromQuery(branchQuery)) return false;
+      const saved = localStorage.getItem('solmar_user_branch');
+      if (saved && ALL_BRANCHES.includes(saved as any)) return false;
+    }
+    return true; // Show initial selection if branch not chosen yet
+  });
+
   useEffect(() => {
-    // Check URL parameters for deep linking
+    // Check URL parameters for deep linking & branch context
     const params = new URLSearchParams(window.location.search);
     const annId = params.get('announcement');
     const docId = params.get('document');
+    const branchQuery = params.get('sucursal') || params.get('branch') || params.get('sede');
+
+    const parsedBranch = parseBranchFromQuery(branchQuery);
+    if (parsedBranch) {
+      setUserBranch(parsedBranch);
+      setIsDirectBranchLink(true);
+      setHasConfiguredBranch(true);
+      setIsBranchPickerOpen(false);
+      localStorage.setItem('solmar_user_branch', parsedBranch);
+    }
 
     if (annId) {
       setActiveTab('feed');
@@ -89,6 +142,13 @@ export default function App() {
     };
   }, []);
 
+  const handleSelectBranch = (branch: BranchName) => {
+    setUserBranch(branch);
+    setHasConfiguredBranch(true);
+    setIsBranchPickerOpen(false);
+    localStorage.setItem('solmar_user_branch', branch);
+  };
+
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -110,7 +170,7 @@ export default function App() {
   };
 
   const handleAddComment = (id: string, text: string) => {
-    const authorName = isAdminLoggedIn || role === 'admin' ? 'RRHH SOLMAR' : 'Colaborador SOLMAR';
+    const authorName = isAdminLoggedIn || role === 'admin' ? 'RRHH SOLMAR' : `Colaborador (${userBranch})`;
     addCommentToAnnouncement(id, text, authorName);
   };
 
@@ -119,8 +179,22 @@ export default function App() {
     setIsAnnouncementModalOpen(true);
   };
 
-  const handleOpenNewDocument = () => {
-    setEditingDocument(null);
+  const handleOpenNewDocument = (targetBranchOverride?: BranchName) => {
+    if (targetBranchOverride) {
+      setEditingDocument({
+        id: '',
+        title: '',
+        category: 'Reglamentos',
+        targetBranch: targetBranchOverride,
+        fileType: 'PDF',
+        fileSize: '1.2 MB',
+        updatedDate: new Date().toISOString().split('T')[0],
+        downloadCount: 0,
+        description: '',
+      });
+    } else {
+      setEditingDocument(null);
+    }
     setIsDocumentModalOpen(true);
   };
 
@@ -155,6 +229,9 @@ export default function App() {
         companyInfo={companyInfo}
         role={role}
         isAdminLoggedIn={isAdminLoggedIn}
+        userBranch={userBranch}
+        isDirectBranchLink={isDirectBranchLink}
+        onOpenBranchPicker={isAdminLoggedIn ? () => setIsBranchPickerOpen(true) : undefined}
         notifications={notifications}
         onMarkNotificationAsRead={markNotificationAsRead}
         onClearNotifications={clearNotifications}
@@ -187,9 +264,14 @@ export default function App() {
           {activeTab === 'feed' && (
             <AnnouncementFeed
               announcements={announcements}
+              documents={documents}
               role={role}
               isAdminLoggedIn={isAdminLoggedIn}
               canPublish={canPublish}
+              userBranch={userBranch}
+              isDirectBranchLink={isDirectBranchLink}
+              onOpenBranchPicker={isAdminLoggedIn ? () => setIsBranchPickerOpen(true) : undefined}
+              onNavigateTab={setActiveTab}
               onLike={toggleLikeAnnouncement}
               onComment={handleAddComment}
               onEditAnnouncement={handleEditAnnouncement}
@@ -204,11 +286,15 @@ export default function App() {
             <DocumentsView
               documents={documents}
               role={role}
+              isAdminLoggedIn={isAdminLoggedIn}
+              userBranch={userBranch}
+              setUserBranch={handleSelectBranch}
+              isDirectBranchLink={isDirectBranchLink}
               canPublish={canPublish}
               onDownload={incrementDocumentDownload}
               onEditDocument={handleEditDocument}
               onDeleteDocument={deleteDocument}
-              onOpenNewModal={handleOpenNewDocument}
+              onOpenNewModal={() => handleOpenNewDocument()}
               globalSearch={globalSearch}
               highlightedId={highlightedItemId}
             />
@@ -240,8 +326,9 @@ export default function App() {
               onEditAnnouncement={handleEditAnnouncement}
               onDeleteAnnouncement={deleteAnnouncement}
               onAddComment={handleAddComment}
-              onNewDocument={handleOpenNewDocument}
+              onNewDocument={() => handleOpenNewDocument()}
               onNewCelebration={handleOpenNewCelebration}
+              onNewDocumentForBranch={(branch) => handleOpenNewDocument(branch)}
             />
           )}
 
@@ -253,6 +340,17 @@ export default function App() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={handleLogin}
+      />
+
+      {/* Branch Selector Modal (Initial Setup or Admin Audit) */}
+      <BranchSelectorModal
+        isOpen={isBranchPickerOpen}
+        onClose={hasConfiguredBranch || isAdminLoggedIn ? () => setIsBranchPickerOpen(false) : undefined}
+        currentBranch={userBranch}
+        onSelectBranch={handleSelectBranch}
+        isInitialSetup={!hasConfiguredBranch}
+        documents={documents}
+        announcements={announcements}
       />
 
       {/* Editor Modals */}
