@@ -1,0 +1,17 @@
+{
+  "name": "SOLMAR - Portal de Comunicados y RRHH",
+  "short_name": "SOLMAR RRHH",
+  "description": "Portal oficial de comunicados, documentos y RRHH de SOLMAR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#115e59",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/cCPc7DGG/IMG-3504-JPG.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
