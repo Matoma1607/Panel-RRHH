@@ -18,7 +18,8 @@ import {
   detectGenderFromName,
   getSmartAvatarUrl,
   resolveCelebrationAvatar,
-  AVATAR_PRESETS,
+  AVATAR_MAN,
+  AVATAR_WOMAN,
   DetectedGender,
 } from '../../utils/avatarUtils';
 
@@ -43,7 +44,7 @@ export const CelebrationEditorModal: React.FC<Props> = ({
   const [type, setType] = useState<'birthday' | 'anniversary'>('birthday');
   const [employeeName, setEmployeeName] = useState('');
   const [department, setDepartment] = useState('Ventas');
-  const [gender, setGender] = useState<DetectedGender>('neutral');
+  const [gender, setGender] = useState<DetectedGender>('male');
   const [avatar, setAvatar] = useState('');
   const [customPhotoUrl, setCustomPhotoUrl] = useState('');
   const [showCustomPhotoInput, setShowCustomPhotoInput] = useState(false);
@@ -68,7 +69,13 @@ export const CelebrationEditorModal: React.FC<Props> = ({
       );
       setAvatar(cleanAvatar);
       
-      if (editingCelebration.avatar && !editingCelebration.avatar.includes('dicebear.com') && !editingCelebration.avatar.includes('unsplash.com')) {
+      if (
+        editingCelebration.avatar &&
+        editingCelebration.avatar !== AVATAR_MAN &&
+        editingCelebration.avatar !== AVATAR_WOMAN &&
+        !editingCelebration.avatar.includes('dicebear.com') &&
+        !editingCelebration.avatar.includes('unsplash.com')
+      ) {
         setCustomPhotoUrl(editingCelebration.avatar);
         setShowCustomPhotoInput(true);
       } else {
@@ -88,8 +95,8 @@ export const CelebrationEditorModal: React.FC<Props> = ({
       setType('birthday');
       setEmployeeName('');
       setDepartment('Ventas');
-      setGender('female');
-      setAvatar(getSmartAvatarUrl('', 'female'));
+      setGender('male');
+      setAvatar(AVATAR_MAN);
       setCustomPhotoUrl('');
       setShowCustomPhotoInput(false);
       const now = new Date();
@@ -114,13 +121,6 @@ export const CelebrationEditorModal: React.FC<Props> = ({
     if (!customPhotoUrl) {
       setAvatar(getSmartAvatarUrl(employeeName, newGender));
     }
-  };
-
-  const handleSelectPreset = (url: string, presetGender: DetectedGender) => {
-    setGender(presetGender);
-    setAvatar(url);
-    setCustomPhotoUrl('');
-    setShowCustomPhotoInput(false);
   };
 
   const handleCustomPhotoChange = (url: string) => {
@@ -155,10 +155,6 @@ export const CelebrationEditorModal: React.FC<Props> = ({
     });
     onClose();
   };
-
-  const filteredPresets = AVATAR_PRESETS.filter(
-    (p) => gender === 'neutral' || p.gender === gender
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -227,7 +223,7 @@ export const CelebrationEditorModal: React.FC<Props> = ({
                   required
                   value={employeeName}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Ej: Sofia Gómez o Martín Perez"
+                  placeholder="Ej: Sofía Gómez o Martín Perez"
                   className="w-full pl-8 pr-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm sm:text-xs focus:outline-none focus:border-teal-700"
                 />
                 <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3 sm:top-2.5" />
@@ -255,100 +251,83 @@ export const CelebrationEditorModal: React.FC<Props> = ({
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
                 <Wand2 className="w-3.5 h-3.5 text-teal-700" />
-                <span>Avatar e Identidad Digital</span>
+                <span>Avatar Automático (Silueta)</span>
               </span>
               {employeeName && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-100 text-teal-800">
-                  Detectado: {gender === 'female' ? 'Mujer 👩' : gender === 'male' ? 'Varón 👨' : 'General ✨'}
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-teal-100 text-teal-800">
+                  Detectado: {gender === 'female' ? 'Mujer 👩' : 'Varón 👨'}
                 </span>
               )}
             </div>
 
-            {/* Gender Switcher */}
-            <div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleGenderChange('female')}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    gender === 'female'
-                      ? 'bg-pink-600 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <span>Mujer 👩</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleGenderChange('male')}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    gender === 'male'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <span>Varón 👨</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleGenderChange('neutral')}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    gender === 'neutral'
-                      ? 'bg-slate-800 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <span>Neutro ✨</span>
-                </button>
-              </div>
+            {/* Direct selector between the two silhouette avatars */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Varón card */}
+              <button
+                type="button"
+                onClick={() => handleGenderChange('male')}
+                className={`p-3 rounded-2xl border transition-all text-left flex items-center gap-3 cursor-pointer ${
+                  gender === 'male' && !customPhotoUrl
+                    ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="relative shrink-0">
+                  <img
+                    src={AVATAR_MAN}
+                    alt="Silueta Hombre"
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 rounded-xl object-cover bg-white border border-slate-200"
+                  />
+                  {gender === 'male' && !customPhotoUrl && (
+                    <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5 shadow-xs">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 text-xs flex items-center gap-1">
+                    <span>Varón</span>
+                    <span className="text-[11px]">👨</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 leading-tight mt-0.5">Silueta masculina</div>
+                </div>
+              </button>
+
+              {/* Mujer card */}
+              <button
+                type="button"
+                onClick={() => handleGenderChange('female')}
+                className={`p-3 rounded-2xl border transition-all text-left flex items-center gap-3 cursor-pointer ${
+                  gender === 'female' && !customPhotoUrl
+                    ? 'bg-pink-50/80 border-pink-500 ring-2 ring-pink-500/20 shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="relative shrink-0">
+                  <img
+                    src={AVATAR_WOMAN}
+                    alt="Silueta Mujer"
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 rounded-xl object-cover bg-white border border-slate-200"
+                  />
+                  {gender === 'female' && !customPhotoUrl && (
+                    <div className="absolute -bottom-1 -right-1 bg-pink-600 text-white rounded-full p-0.5 shadow-xs">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 text-xs flex items-center gap-1">
+                    <span>Mujer</span>
+                    <span className="text-[11px]">👩</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 leading-tight mt-0.5">Silueta femenina</div>
+                </div>
+              </button>
             </div>
 
-            {/* Preview & Preset Avatars Selector */}
-            <div className="flex items-center gap-3 pt-1">
-              <div className="relative shrink-0">
-                <img
-                  src={activeAvatar}
-                  alt="Avatar Seleccionado"
-                  referrerPolicy="no-referrer"
-                  className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md bg-white ring-2 ring-teal-700/30 p-0.5"
-                />
-                <div className="absolute -bottom-1 -right-1 p-0.5 bg-teal-800 text-white rounded-md text-[9px]">
-                  <Check className="w-3 h-3" />
-                </div>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  Elegir estilo de avatar:
-                </span>
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {filteredPresets.map((preset) => {
-                    const isSelected = activeAvatar === preset.url;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => handleSelectPreset(preset.url, preset.gender)}
-                        title={preset.name}
-                        className={`w-9 h-9 rounded-xl p-0.5 shrink-0 transition-all cursor-pointer bg-white border ${
-                          isSelected
-                            ? 'ring-2 ring-teal-700 border-teal-700 scale-105 shadow-xs'
-                            : 'border-slate-200 hover:border-slate-400 hover:scale-105'
-                        }`}
-                      >
-                        <img
-                          src={preset.url}
-                          alt={preset.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Toggle Custom Photo Input */}
+            {/* Optional Custom Photo Input */}
             <div className="pt-1 border-t border-slate-200/80 flex items-center justify-between">
               <button
                 type="button"
@@ -367,7 +346,7 @@ export const CelebrationEditorModal: React.FC<Props> = ({
                   }}
                   className="text-[10px] text-rose-600 font-bold hover:underline"
                 >
-                  Restablecer avatar
+                  Restablecer a silueta
                 </button>
               )}
             </div>

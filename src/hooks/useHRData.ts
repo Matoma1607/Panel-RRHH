@@ -23,6 +23,7 @@ import {
   initializeFirestoreDefaults
 } from '../services/firestoreService';
 import { testFirestoreConnection } from '../firebase';
+import { detectGenderFromName, getSmartAvatarUrl } from '../utils/avatarUtils';
 
 const STORAGE_KEYS = {
   ROLE: 'rrhh_user_role_v3',
@@ -363,11 +364,17 @@ export function useHRData() {
 
   // Actions: Celebrations
   const saveCelebration = (celData: Partial<CelebrationItem> & { id?: string }) => {
+    const detectedGender = celData.gender || detectGenderFromName(celData.employeeName || '');
     if (celData.id) {
       setCelebrations((prev) =>
         prev.map((c) => {
           if (c.id === celData.id) {
-            const updated = { ...c, ...celData } as CelebrationItem;
+            const updated = {
+              ...c,
+              ...celData,
+              gender: detectedGender,
+              avatar: celData.avatar || c.avatar || getSmartAvatarUrl(celData.employeeName || c.employeeName, detectedGender),
+            } as CelebrationItem;
             saveDocToFirestore('celebrations', c.id, updated);
             return updated;
           }
@@ -379,7 +386,8 @@ export function useHRData() {
         id: 'cel-' + Date.now(),
         employeeName: celData.employeeName || 'Colaborador',
         department: celData.department || 'General',
-        avatar: celData.avatar,
+        gender: detectedGender,
+        avatar: celData.avatar || getSmartAvatarUrl(celData.employeeName || '', detectedGender),
         date: celData.date || '15/08',
         type: celData.type || 'birthday',
         yearsAtCompany: celData.yearsAtCompany,
