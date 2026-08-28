@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CompanyInfo, UserRole, AppNotification } from '../types';
+import { CompanyInfo, UserRole, AppNotification, BranchName } from '../types';
 import {
   LogOut,
   ShieldCheck,
   Search,
   Bell,
-  Users
+  Users,
+  Building2,
+  MapPin,
+  Lock
 } from 'lucide-react';
 import { NotificationsPopover } from './NotificationsPopover';
 
@@ -13,6 +16,9 @@ interface NavbarProps {
   companyInfo: CompanyInfo;
   role: UserRole;
   isAdminLoggedIn: boolean;
+  userBranch?: BranchName;
+  isDirectBranchLink?: boolean;
+  onOpenBranchPicker?: () => void;
   activeArea?: string;
   activeEmployeeName?: string;
   notifications?: AppNotification[];
@@ -35,6 +41,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   companyInfo,
   role,
   isAdminLoggedIn,
+  userBranch,
+  isDirectBranchLink = false,
+  onOpenBranchPicker,
   activeArea,
   notifications = [],
   onMarkNotificationAsRead = () => {},
@@ -52,7 +61,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifContainerRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const visibleNotifications = notifications.filter((n) => {
+    if (!isAdminLoggedIn && userBranch) {
+      if (n.targetBranch && n.targetBranch !== 'Todas' && n.targetBranch !== userBranch) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const unreadCount = visibleNotifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,6 +134,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Controls */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
+            {/* Active Branch Pill */}
+            {userBranch && (
+              isAdminLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={onOpenBranchPicker}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-50 hover:bg-teal-100/80 text-teal-950 border border-teal-200 shadow-2xs transition-colors cursor-pointer"
+                  title="Cambiar sucursal para auditar (Modo Administrador)"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                  <span className="truncate max-w-[110px] sm:max-w-[150px]">{userBranch}</span>
+                  <span className="text-[10px] text-teal-600 font-mono">✎</span>
+                </button>
+              ) : (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-50 text-teal-950 border border-teal-200 shadow-2xs select-none"
+                  title={`Sucursal vinculada a este equipo: ${userBranch} (Bloqueada)`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                  <span className="truncate max-w-[110px] sm:max-w-[150px]">{userBranch}</span>
+                  <Lock className="w-3 h-3 text-teal-600 shrink-0" />
+                </div>
+              )
+            )}
+
             {/* Notifications Bell */}
             <div ref={notifContainerRef} className="relative shrink-0">
               <button
@@ -146,6 +189,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onDeleteNotification={onDeleteNotification}
                 onDeleteAll={onDeleteAllNotifications}
                 onNavigateTab={setActiveTab}
+                userBranch={userBranch}
+                isAdminLoggedIn={isAdminLoggedIn}
               />
             </div>
 
@@ -174,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Acceso exclusivo para administradores de RRHH"
               >
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Ingreso RRHH</span>
+                <span className="hidden xs:inline">Ingreso RRHH</span>
               </button>
             )}
 

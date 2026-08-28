@@ -10,9 +10,12 @@ import {
   Sparkles,
   FileText,
   Megaphone,
-  Cake
+  Cake,
+  Building2,
+  Lock,
+  Globe
 } from 'lucide-react';
-import { Announcement, DocumentItem, CelebrationItem } from '../../types';
+import { Announcement, DocumentItem, CelebrationItem, getBranchSlug } from '../../types';
 
 export type ShareItemType = 'announcement' | 'document' | 'celebration';
 
@@ -41,19 +44,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   let shareUrl = '';
   let fullFormattedText = '';
   let headerBadge = '';
+  let branchBadge = '';
   let IconComponent = Megaphone;
 
   if (type === 'announcement') {
     const ann = item as Announcement;
     title = ann.title;
-    shareUrl = `${origin}${pathname}?announcement=${ann.id}`;
+    const branchParam = ann.targetBranch && ann.targetBranch !== 'Todas' ? `&sucursal=${getBranchSlug(ann.targetBranch)}` : '';
+    shareUrl = `${origin}${pathname}?announcement=${ann.id}${branchParam}`;
     headerBadge = 'Comunicado Oficial';
+    branchBadge = ann.targetBranch && ann.targetBranch !== 'Todas' ? `📍 Exclusivo: ${ann.targetBranch}` : '🌐 Todas las sucursales';
     IconComponent = Megaphone;
 
     fullFormattedText = `📢 *COMUNICADO OFICIAL | ÓPTICA SOLMAR*
 
 📌 *${ann.title}*
-🏢 Categoría: ${ann.category}
+🏢 Destino: ${ann.targetBranch && ann.targetBranch !== 'Todas' ? `Sucursal ${ann.targetBranch}` : 'Todas las sucursales'}
+📂 Categoría: ${ann.category}
 📅 Fecha: ${ann.date}
 ✍️ Publicado por: ${ann.author || 'Recursos Humanos'}
 
@@ -62,26 +69,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 ${ann.content}
 ━━━━━━━━━━━━━━━━━━━━
 
-🔗 *Acceso directo al portal interno:*
+🔗 *Acceso directo al comunicado en el portal:*
 ${shareUrl}`;
   } else if (type === 'document') {
     const doc = item as DocumentItem;
     title = doc.title;
-    shareUrl = `${origin}${pathname}?document=${doc.id}`;
+    const branchParam = doc.targetBranch && doc.targetBranch !== 'Todas' ? `&sucursal=${getBranchSlug(doc.targetBranch)}` : '';
+    shareUrl = `${origin}${pathname}?document=${doc.id}${branchParam}`;
     headerBadge = 'Documento Corporativo';
+    branchBadge = doc.targetBranch && doc.targetBranch !== 'Todas' ? `📍 Exclusivo: ${doc.targetBranch}` : '🌐 Todas las sucursales';
     IconComponent = FileText;
 
     fullFormattedText = `📄 *DOCUMENTO OFICIAL | ÓPTICA SOLMAR*
 
 📌 *${doc.title}*
+🏢 Destino: ${doc.targetBranch && doc.targetBranch !== 'Todas' ? `Exclusivo Sucursal ${doc.targetBranch}` : 'Todas las sucursales'}
 📂 Categoría: ${doc.category}
 📊 Formato: ${doc.fileType} (${doc.fileSize})
 📅 Actualizado: ${doc.updatedDate}
 
 📝 *Descripción:*
-${doc.description || 'Documento disponible para consulta del personal.'}
+${doc.description || 'Documento disponible para consulta y descarga.'}
 
-🔗 *Ver y descargar en el portal:*
+🔗 *Ver y descargar directamente en el portal:*
 ${shareUrl}`;
   } else if (type === 'celebration') {
     const cel = item as CelebrationItem;
@@ -148,34 +158,39 @@ ${shareUrl}`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[92dvh] sm:max-h-[92vh] animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#232f32] text-white p-5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
+        <div className="bg-[#232f32] text-white p-4 sm:p-5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 pr-4">
+            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 shrink-0">
               <IconComponent className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-extrabold text-base tracking-tight text-white">
                   Compartir Nota Profesional
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30">
                   {headerBadge}
                 </span>
+                {branchBadge && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
+                    {branchBadge}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-[11px] sm:text-xs text-slate-300">
                 Comparte la nota completa con formato oficial
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors cursor-pointer shrink-0"
             aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
@@ -183,14 +198,14 @@ ${shareUrl}`;
         </div>
 
         {/* Content Body */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
           {/* Formatted Text Preview */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-bold text-slate-700">
               <span>Vista previa del mensaje a compartir:</span>
               <span className="text-[11px] text-slate-400 font-normal">Incluye título, nota y enlace</span>
             </div>
-            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 text-xs text-slate-700 font-mono whitespace-pre-wrap leading-relaxed max-h-52 overflow-y-auto select-all shadow-inner">
+            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3 sm:p-3.5 text-xs text-slate-700 font-mono whitespace-pre-wrap leading-relaxed max-h-48 sm:max-h-52 overflow-y-auto select-all shadow-inner">
               {fullFormattedText}
             </div>
           </div>
@@ -200,11 +215,11 @@ ${shareUrl}`;
             <label className="text-xs font-bold text-slate-700 block">
               Canales de envío rápido:
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {/* WhatsApp Button */}
               <button
                 onClick={handleWhatsAppShare}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Enviar por WhatsApp</span>
@@ -213,7 +228,7 @@ ${shareUrl}`;
               {/* Email Button */}
               <button
                 onClick={handleEmailShare}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-xs hover:shadow-sm transition-all cursor-pointer"
               >
                 <Mail className="w-4 h-4" />
                 <span>Enviar por Correo</span>
@@ -222,14 +237,14 @@ ${shareUrl}`;
           </div>
 
           {/* Direct Copy Actions */}
-          <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
             {/* Copy Full Note Button */}
             <button
               onClick={handleCopyFullText}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                 copiedText
                   ? 'bg-teal-700 text-white border-teal-700'
-                  : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900 shadow-xs'
+                  : 'bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white border-slate-900 shadow-xs'
               }`}
             >
               {copiedText ? (
@@ -251,7 +266,7 @@ ${shareUrl}`;
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all border cursor-pointer ${
                 copiedLink
                   ? 'bg-slate-200 text-slate-900 border-slate-300'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                  : 'bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border-slate-300'
               }`}
             >
               {copiedLink ? (

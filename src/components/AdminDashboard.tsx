@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CompanyInfo, Announcement, DocumentItem, CelebrationItem } from '../types';
+import { CompanyInfo, Announcement, DocumentItem, CelebrationItem, BranchName } from '../types';
 import {
   Newspaper,
   FileText,
@@ -12,8 +12,10 @@ import {
   Trash2,
   MessageSquare,
   Send,
-  Pin
+  Pin,
+  Building2
 } from 'lucide-react';
+import { BranchDirectLinksAdmin } from './BranchDirectLinksAdmin';
 
 interface AdminDashboardProps {
   companyInfo: CompanyInfo;
@@ -29,6 +31,7 @@ interface AdminDashboardProps {
   onAddComment?: (id: string, text: string) => void;
   onNewDocument: () => void;
   onNewCelebration?: () => void;
+  onNewDocumentForBranch?: (branch: BranchName) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -176,6 +179,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Branch Access & WhatsApp Diffusion Section */}
+      <BranchDirectLinksAdmin
+        documents={documents}
+        announcements={announcements}
+        onNewDocumentForBranch={(branch) => {
+          onNewDocument();
+        }}
+        onNavigateTab={onNavigateTab}
+      />
 
       {/* Announcements & Comments RRHH Management Section */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">

@@ -12,9 +12,10 @@ import {
   Gift,
   Coins,
   Inbox,
-  Trash2
+  Trash2,
+  MapPin
 } from 'lucide-react';
-import { AppNotification } from '../types';
+import { AppNotification, BranchName } from '../types';
 
 interface NotificationsPopoverProps {
   notifications: AppNotification[];
@@ -25,6 +26,8 @@ interface NotificationsPopoverProps {
   onDeleteNotification?: (id: string) => void;
   onDeleteAll?: () => void;
   onNavigateTab: (tab: string) => void;
+  userBranch?: BranchName;
+  isAdminLoggedIn?: boolean;
 }
 
 export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
@@ -35,15 +38,27 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
   onClearAll,
   onDeleteNotification,
   onDeleteAll,
-  onNavigateTab
+  onNavigateTab,
+  userBranch,
+  isAdminLoggedIn = false,
 }) => {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const filteredNotifications = filter === 'unread' ? notifications.filter((n) => !n.read) : notifications;
+  // Filter notifications by branch for employees
+  const branchScopedNotifications = notifications.filter((notif) => {
+    if (!isAdminLoggedIn && userBranch) {
+      if (notif.targetBranch && notif.targetBranch !== 'Todas' && notif.targetBranch !== userBranch) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const unreadCount = branchScopedNotifications.filter((n) => !n.read).length;
+  const filteredNotifications = filter === 'unread' ? branchScopedNotifications.filter((n) => !n.read) : branchScopedNotifications;
 
   const getNotificationIcon = (notif: AppNotification) => {
     const text = (notif.title + ' ' + notif.message).toLowerCase();
@@ -239,6 +254,13 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
                       {notif.date}
                     </span>
                   </div>
+                  {notif.targetBranch && notif.targetBranch !== 'Todas' && (
+                    <div className="mb-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                        📍 Para: {notif.targetBranch}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xs text-slate-600 leading-snug line-clamp-2">
                     {notif.message}
                   </p>

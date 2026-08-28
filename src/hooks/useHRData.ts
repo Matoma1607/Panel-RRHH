@@ -103,7 +103,7 @@ export function useHRData() {
     const unsubCompany = subscribeDocument<CompanyInfo>(
       'company',
       'main',
-      (data) => setCompanyInfo(data),
+      (data) => setCompanyInfo(data || INITIAL_COMPANY_INFO),
       INITIAL_COMPANY_INFO
     );
 
@@ -226,20 +226,23 @@ export function useHRData() {
         likedBySession: false,
         comments: [],
         author: announcementData.author || 'Gabinete de RRHH',
-        targetArea: announcementData.targetArea || 'Todas'
+        targetArea: announcementData.targetArea || 'Todas',
+        targetBranch: announcementData.targetBranch || 'Todas'
       };
       setAnnouncements((prev) => [newAnn, ...prev]);
       saveDocToFirestore('announcements', newAnn.id, newAnn);
 
+      const branchNotice = newAnn.targetBranch && newAnn.targetBranch !== 'Todas' ? ` [${newAnn.targetBranch}]` : '';
       const notif: AppNotification = {
         id: `not-${Date.now()}`,
         itemId: newAnn.id,
-        title: `📢 ${newAnn.title}`,
+        title: `📢 ${newAnn.title}${branchNotice}`,
         message: newAnn.content ? (newAnn.content.length > 90 ? newAnn.content.substring(0, 90) + '...' : newAnn.content) : 'Nuevo comunicado publicado en la cartelera.',
         type: 'announcement',
         date: 'Recién',
         read: false,
-        linkTab: 'feed'
+        linkTab: 'feed',
+        targetBranch: newAnn.targetBranch || 'Todas'
       };
       setNotifications((prev) => [notif, ...prev]);
       saveDocToFirestore('notifications', notif.id, notif);
@@ -289,6 +292,7 @@ export function useHRData() {
         id: 'doc-' + Date.now(),
         title: docData.title || 'Documento.pdf',
         category: docData.category || 'Políticas',
+        targetBranch: docData.targetBranch || 'Todas',
         description: docData.description || 'Documento informativo para el personal.',
         fileType: docData.fileType || 'PDF',
         fileSize: docData.fileSize || '1.5 MB',
@@ -302,15 +306,17 @@ export function useHRData() {
       setDocuments((prev) => [newDoc, ...prev]);
       saveDocToFirestore('documents', newDoc.id, newDoc);
 
+      const branchLabel = newDoc.targetBranch && newDoc.targetBranch !== 'Todas' ? ` [${newDoc.targetBranch}]` : '';
       const notif: AppNotification = {
         id: `not-${Date.now()}`,
         itemId: newDoc.id,
-        title: `📄 Nuevo Documento: ${newDoc.title}`,
-        message: `Se publicó "${newDoc.title}" en la sección de Documentos (${newDoc.category}).`,
+        title: `📄 Nuevo Documento${branchLabel}: ${newDoc.title}`,
+        message: `Se publicó "${newDoc.title}" en la sección de Documentos (${newDoc.category})${newDoc.targetBranch && newDoc.targetBranch !== 'Todas' ? ` exclusivo para ${newDoc.targetBranch}` : ''}.`,
         type: 'document',
         date: 'Recién',
         read: false,
-        linkTab: 'documents'
+        linkTab: 'documents',
+        targetBranch: newDoc.targetBranch || 'Todas'
       };
       setNotifications((prev) => [notif, ...prev]);
       saveDocToFirestore('notifications', notif.id, notif);
