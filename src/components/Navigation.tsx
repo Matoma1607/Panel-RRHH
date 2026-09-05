@@ -59,9 +59,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 p-4 gap-4 border-r border-slate-200/80 bg-white min-h-[calc(100vh-4rem)]">
+      <aside className="hidden md:flex flex-col w-60 shrink-0 p-4 gap-4 border-r border-[#38484c]/10 bg-white/70 backdrop-blur-md min-h-[calc(100vh-4rem)]">
         <div>
-          <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="px-3 py-1.5 text-[10px] font-bold text-[#38484c]/60 uppercase tracking-wider">
             Secciones
           </div>
 
@@ -75,8 +75,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-teal-800 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                      ? 'bg-[#38484c] text-white shadow-sm'
+                      : 'text-slate-700 hover:text-slate-950 hover:bg-white/70'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -101,7 +101,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
 
         {/* Status Box in Sidebar */}
-        <div className="mt-auto p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-slate-700 space-y-2">
+        <div className="mt-auto p-3.5 bg-white/80 rounded-2xl border border-[#38484c]/10 text-slate-700 space-y-2 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Modo Activo
@@ -125,7 +125,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 shadow-lg">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-md border-t border-[#38484c]/12 px-2 py-1 shadow-lg">
         <nav className="flex items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;

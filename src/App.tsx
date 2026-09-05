@@ -222,9 +222,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased pb-20 md:pb-8 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen relative text-slate-800 font-sans antialiased pb-20 md:pb-8 w-full max-w-full overflow-x-hidden bg-[#e2eaeb]">
       
-      {/* Top Main Bar */}
+      {/* Ambient translucent brand background wash & soft glows */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        {/* Soft upper-right brand bloom */}
+        <div className="absolute -top-32 -right-32 w-[650px] h-[650px] rounded-full bg-[#38484c]/12 blur-3xl pointer-events-none" />
+        {/* Soft mid-left petrol bloom */}
+        <div className="absolute top-1/3 -left-32 w-[550px] h-[550px] rounded-full bg-[#5c6c6c]/10 blur-3xl pointer-events-none" />
+        {/* Soft bottom-center glow */}
+        <div className="absolute -bottom-24 right-1/4 w-[600px] h-[600px] rounded-full bg-[#38484c]/8 blur-3xl pointer-events-none" />
+        {/* Translucent vertical gradient mask */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-[#d8e3e5]/40 pointer-events-none" />
+      </div>
+
+      <div className="relative z-10">
+        {/* Top Main Bar */}
       <Navbar
         companyInfo={companyInfo}
         role={role}
@@ -382,6 +395,7 @@ export default function App() {
         editingCelebration={editingCelebration}
       />
 
+      </div>
     </div>
   );
 }

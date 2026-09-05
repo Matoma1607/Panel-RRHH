@@ -4,8 +4,8 @@
   --color-brand-dark: #38484c;
   --color-brand-mid: #5c6c6c;
   --color-brand-light: #a6b2b1;
-  --color-brand-soft: #f2f5f5;
-  --color-brand-border: #d2d9d8;
+  --color-brand-soft: #e2eaeb;
+  --color-brand-border: #ccd7d8;
 }
 
 /* Prevent horizontal overflow on mobile devices */
@@ -26,7 +26,7 @@ img, video, canvas, svg {
 
 /* Custom background tinting and brand utility helpers */
 body {
-  background-color: #f6f8f8;
+  background-color: #e2eaeb;
   color: #38484c;
 }
 
