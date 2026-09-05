@@ -22,7 +22,8 @@ import {
   Globe,
   Lock,
   MapPin,
-  Info
+  Info,
+  X
 } from 'lucide-react';
 import { ShareModal } from './modals/ShareModal';
 
@@ -36,6 +37,7 @@ interface DocumentsViewProps {
   isDirectBranchLink?: boolean;
   searchFilter?: string;
   globalSearch?: string;
+  setGlobalSearch?: (s: string) => void;
   highlightedId?: string | null;
   onNewDocument?: () => void;
   onOpenNewModal?: () => void;
@@ -57,6 +59,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
   isDirectBranchLink = false,
   searchFilter,
   globalSearch,
+  setGlobalSearch,
   highlightedId,
   onNewDocument,
   onOpenNewModal,
@@ -323,30 +326,76 @@ Descargado desde el Portal de RRHH Interno de la Empresa SOLMAR.
         ))}
       </div>
 
-      {/* Empty State */}
-      {filtered.length === 0 && (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-            <Sparkles className="w-6 h-6" />
+      {/* Active Search Banner Indicator */}
+      {effectiveFilter && (
+        <div className="flex items-center justify-between p-3.5 bg-teal-50/80 border border-teal-200 rounded-2xl text-xs text-teal-950 font-medium animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-teal-700 shrink-0" />
+            <span>
+              Filtrando por: <strong>"{globalSearch || searchFilter}"</strong> ({filtered.length} {filtered.length === 1 ? 'documento encontrado' : 'documentos encontrados'})
+            </span>
           </div>
-          <h3 className="font-bold text-slate-800 text-base">
-            No se encontraron documentos para {isAdminLoggedIn && adminBranchFilter !== 'Todas' ? adminBranchFilter : userBranch}
-          </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            {canPublish 
-              ? 'Puedes subir un nuevo archivo en PDF, Word o Excel y asignar la visibilidad para esta sucursal o para todas.' 
-              : 'No hay documentos asignados a esta categoría o sucursal en este momento.'}
-          </p>
-          {canPublish && (
+          {setGlobalSearch && (
             <button
-              onClick={handleNewDocumentFn}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              type="button"
+              onClick={() => setGlobalSearch('')}
+              className="flex items-center gap-1 font-bold text-teal-800 hover:text-teal-950 underline cursor-pointer ml-2 shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Subir documento ahora</span>
+              <X className="w-3.5 h-3.5" />
+              <span>Limpiar búsqueda</span>
             </button>
           )}
         </div>
+      )}
+
+      {/* Empty State */}
+      {filtered.length === 0 && (
+        effectiveFilter ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base">
+              No se encontraron documentos para "{globalSearch || searchFilter}"
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Prueba con otro término o palabra clave, o limpia el buscador para ver todos los archivos.
+            </p>
+            {setGlobalSearch && (
+              <button
+                type="button"
+                onClick={() => setGlobalSearch('')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Ver todos los documentos</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base">
+              No se encontraron documentos para {isAdminLoggedIn && adminBranchFilter !== 'Todas' ? adminBranchFilter : userBranch}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              {canPublish 
+                ? 'Puedes subir un nuevo archivo en PDF, Word o Excel y asignar la visibilidad para esta sucursal o para todas.' 
+                : 'No hay documentos asignados a esta categoría o sucursal en este momento.'}
+            </p>
+            {canPublish && (
+              <button
+                onClick={handleNewDocumentFn}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Subir documento ahora</span>
+              </button>
+            )}
+          </div>
+        )
       )}
 
       {/* Documents Grid */}

@@ -244,6 +244,9 @@ export default function App() {
         setActiveTab={setActiveTab}
         globalSearch={globalSearch}
         setGlobalSearch={setGlobalSearch}
+        announcements={announcements}
+        documents={documents}
+        celebrations={celebrations}
       />
 
       {/* Main Container Layout */}
@@ -278,6 +281,7 @@ export default function App() {
               onDeleteAnnouncement={deleteAnnouncement}
               onOpenNewModal={handleOpenNewAnnouncement}
               globalSearch={globalSearch}
+              setGlobalSearch={setGlobalSearch}
               highlightedId={highlightedItemId}
             />
           )}
@@ -296,6 +300,7 @@ export default function App() {
               onDeleteDocument={deleteDocument}
               onOpenNewModal={() => handleOpenNewDocument()}
               globalSearch={globalSearch}
+              setGlobalSearch={setGlobalSearch}
               highlightedId={highlightedItemId}
             />
           )}
@@ -310,6 +315,8 @@ export default function App() {
               onOpenNewModal={handleOpenNewCelebration}
               onEditCelebration={handleEditCelebration}
               onDeleteCelebration={deleteCelebration}
+              globalSearch={globalSearch}
+              setGlobalSearch={setGlobalSearch}
             />
           )}
 

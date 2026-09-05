@@ -1,14 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { CompanyInfo, UserRole, AppNotification, BranchName } from '../types';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import {
+  CompanyInfo,
+  UserRole,
+  AppNotification,
+  BranchName,
+  Announcement,
+  DocumentItem,
+  CelebrationItem
+} from '../types';
 import {
   LogOut,
   ShieldCheck,
   Search,
   Bell,
-  Users,
-  Building2,
   MapPin,
-  Lock
+  Lock,
+  X,
+  Radio,
+  FileText,
+  Cake
 } from 'lucide-react';
 import { NotificationsPopover } from './NotificationsPopover';
 
@@ -35,6 +45,9 @@ interface NavbarProps {
   setGlobalSearch: (search: string) => void;
   sessionsCount?: number;
   onOpenSessionManager?: () => void;
+  announcements?: Announcement[];
+  documents?: DocumentItem[];
+  celebrations?: CelebrationItem[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -56,10 +69,51 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   globalSearch,
-  setGlobalSearch
+  setGlobalSearch,
+  announcements = [],
+  documents = [],
+  celebrations = [],
 }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const notifContainerRef = useRef<HTMLDivElement>(null);
+
+  const query = (globalSearch || '').trim().toLowerCase();
+
+  // Calculate live matches across all sections of the site
+  const searchCounts = useMemo(() => {
+    if (!query) {
+      return { feed: 0, docs: 0, cels: 0, total: 0 };
+    }
+    const feed = announcements.filter((item) => {
+      return (
+        (item.title || '').toLowerCase().includes(query) ||
+        (item.content || '').toLowerCase().includes(query) ||
+        (item.category || '').toLowerCase().includes(query) ||
+        (item.targetBranch || '').toLowerCase().includes(query)
+      );
+    }).length;
+
+    const docs = documents.filter((doc) => {
+      return (
+        (doc.title || '').toLowerCase().includes(query) ||
+        (doc.description || '').toLowerCase().includes(query) ||
+        (doc.category || '').toLowerCase().includes(query) ||
+        (doc.targetBranch || '').toLowerCase().includes(query)
+      );
+    }).length;
+
+    const cels = celebrations.filter((cel) => {
+      return (
+        (cel.employeeName || '').toLowerCase().includes(query) ||
+        (cel.department || '').toLowerCase().includes(query) ||
+        (cel.date || '').toLowerCase().includes(query) ||
+        (cel.type === 'birthday' ? 'cumpleaños cumple' : 'aniversario').includes(query)
+      );
+    }).length;
+
+    return { feed, docs, cels, total: feed + docs + cels };
+  }, [query, announcements, documents, celebrations]);
 
   const visibleNotifications = notifications.filter((n) => {
     if (!isAdminLoggedIn && userBranch) {
@@ -117,22 +171,97 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-2">
+          {/* Search Bar (Desktop) */}
+          <div className="hidden md:flex flex-1 max-w-md mx-2 relative">
             <div className="relative w-full">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
                 placeholder="Buscar comunicado, compañero o documento..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-100/90 hover:bg-slate-100 focus:bg-white text-xs rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800"
+                className="w-full pl-9 pr-8 py-2 bg-slate-100/90 hover:bg-slate-100 focus:bg-white text-xs rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800"
               />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                  title="Limpiar búsqueda"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            {/* Quick Cross-Section Results Pill Dropdown */}
+            {query.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 p-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 animate-in fade-in slide-in-from-top-1 text-xs">
+                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 px-1 text-[11px] text-slate-400 font-medium">
+                  <span>Coincidencias en el portal:</span>
+                  <span className="font-bold text-teal-800">{searchCounts.total} encontradas</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('feed')}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl font-bold transition-all text-center cursor-pointer ${
+                      activeTab === 'feed'
+                        ? 'bg-teal-900 text-white shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <Radio className="w-3 h-3 text-teal-400" />
+                    <span>Avisos ({searchCounts.feed})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('documents')}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl font-bold transition-all text-center cursor-pointer ${
+                      activeTab === 'documents'
+                        ? 'bg-teal-900 text-white shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <FileText className="w-3 h-3 text-blue-400" />
+                    <span>Docs ({searchCounts.docs})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('celebrations')}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl font-bold transition-all text-center cursor-pointer ${
+                      activeTab === 'celebrations'
+                        ? 'bg-teal-900 text-white shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <Cake className="w-3 h-3 text-pink-400" />
+                    <span>Festejos ({searchCounts.cels})</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Controls */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            
+            {/* Mobile Search Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+              className={`md:hidden p-2 rounded-xl transition-all border ${
+                isMobileSearchOpen || globalSearch
+                  ? 'bg-teal-800 text-white border-teal-800'
+                  : 'text-slate-600 hover:text-slate-900 bg-slate-100 border-slate-200/80'
+              }`}
+              title="Buscar en el portal"
+              aria-label="Abrir buscador"
+            >
+              <Search className="w-4 h-4" />
+            </button>
             
             {/* Active Branch Pill */}
             {userBranch && (
@@ -226,6 +355,86 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
         </div>
+
+        {/* Mobile Search Bar Dropdown */}
+        {isMobileSearchOpen && (
+          <div className="md:hidden py-3 border-t border-slate-200/80 animate-in slide-in-from-top-2 duration-150">
+            <div className="relative w-full mb-2">
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                placeholder="Buscar avisos, personas o documentos..."
+                autoFocus
+                className="w-full pl-9 pr-8 py-2 bg-slate-100 focus:bg-white text-xs rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-inner"
+              />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                  title="Limpiar búsqueda"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {query.length > 0 && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('feed');
+                    setIsMobileSearchOpen(false);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center ${
+                    activeTab === 'feed'
+                      ? 'bg-teal-900 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <Radio className="w-3 h-3 text-teal-400" />
+                  <span>Avisos ({searchCounts.feed})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('documents');
+                    setIsMobileSearchOpen(false);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center ${
+                    activeTab === 'documents'
+                      ? 'bg-teal-900 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <FileText className="w-3 h-3 text-blue-400" />
+                  <span>Docs ({searchCounts.docs})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('celebrations');
+                    setIsMobileSearchOpen(false);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center ${
+                    activeTab === 'celebrations'
+                      ? 'bg-teal-900 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <Cake className="w-3 h-3 text-pink-400" />
+                  <span>Festejos ({searchCounts.cels})</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </header>
   );
