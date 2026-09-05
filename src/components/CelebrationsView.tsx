@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CelebrationItem, UserRole } from '../types';
 import {
   Cake,
@@ -15,12 +15,15 @@ import {
   Share2,
   Clock,
   MessageCircle,
-  Flame
+  Flame,
+  Search,
+  X
 } from 'lucide-react';
 import { ShareModal } from './modals/ShareModal';
 import {
   getCelebrationCountdown,
   getSortedUpcomingBirthdays,
+  sortCelebrationsByUpcoming,
 } from '../utils/celebrationUtils';
 import { resolveCelebrationAvatar } from '../utils/avatarUtils';
 
@@ -33,6 +36,8 @@ interface CelebrationsViewProps {
   onOpenNewModal?: () => void;
   onEditCelebration?: (celebration: CelebrationItem) => void;
   onDeleteCelebration?: (id: string) => void;
+  globalSearch?: string;
+  setGlobalSearch?: (query: string) => void;
 }
 
 export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
@@ -44,16 +49,66 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
   onOpenNewModal,
   onEditCelebration,
   onDeleteCelebration,
+  globalSearch,
+  setGlobalSearch,
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'birthdays' | 'anniversaries'>('all');
   const [greetingSuccessId, setGreetingSuccessId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [sharingCelebration, setSharingCelebration] = useState<CelebrationItem | null>(null);
+  const [localSearch, setLocalSearch] = useState<string>('');
 
   const handleNewCelebrationFn = onNewCelebration || onOpenNewModal;
 
-  const birthdays = celebrations.filter((c) => c.type === 'birthday');
-  const anniversaries = celebrations.filter((c) => c.type === 'anniversary');
+  const activeSearch = (globalSearch !== undefined ? globalSearch : localSearch).trim();
+  const searchLower = activeSearch.toLowerCase();
+
+  const handleSearchChange = (val: string) => {
+    if (setGlobalSearch) {
+      setGlobalSearch(val);
+    }
+    setLocalSearch(val);
+  };
+
+  const handleClearSearch = () => {
+    if (setGlobalSearch) {
+      setGlobalSearch('');
+    }
+    setLocalSearch('');
+  };
+
+  // Automatically sort celebrations so the most immediate dates appear first
+  const sortedAll = useMemo(
+    () => sortCelebrationsByUpcoming(celebrations),
+    [celebrations]
+  );
+
+  // Filter celebrations by search query across name, department, date, or type
+  const searchFiltered = useMemo(() => {
+    if (!searchLower) return sortedAll;
+    return sortedAll.filter((item) => {
+      const name = (item.employeeName || '').toLowerCase();
+      const dept = (item.department || '').toLowerCase();
+      const date = (item.date || '').toLowerCase();
+      const typeText = item.type === 'birthday' ? 'cumpleaños cumple' : 'aniversario años';
+      return (
+        name.includes(searchLower) ||
+        dept.includes(searchLower) ||
+        date.includes(searchLower) ||
+        typeText.includes(searchLower)
+      );
+    });
+  }, [sortedAll, searchLower]);
+
+  const birthdays = useMemo(
+    () => searchFiltered.filter((c) => c.type === 'birthday'),
+    [searchFiltered]
+  );
+
+  const anniversaries = useMemo(
+    () => searchFiltered.filter((c) => c.type === 'anniversary'),
+    [searchFiltered]
+  );
 
   const { closestBirthday, upcomingList } = getSortedUpcomingBirthdays(celebrations);
 
@@ -62,7 +117,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
       ? birthdays
       : activeTab === 'anniversaries'
       ? anniversaries
-      : celebrations;
+      : searchFiltered;
 
   const handleGreet = (id: string) => {
     onSendGreeting(id);
@@ -141,8 +196,47 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
         </div>
       </div>
 
-      {/* HIGHLIGHTED NEXT BIRTHDAY HERO BANNER */}
-      {closestBirthday && closestBirthday.countdown && (
+      {/* In-page Search Bar & Active Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={activeSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Buscar por colaborador, área o fecha (ej. Martín, Ventas, Agosto)..."
+            className="w-full pl-9 pr-8 py-2 bg-white text-xs rounded-xl border border-slate-200 focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-2xs"
+          />
+          {activeSearch && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 transition-colors"
+              title="Borrar búsqueda"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {activeSearch && (
+          <div className="text-xs font-semibold text-teal-900 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl flex items-center justify-between gap-2">
+            <span>
+              {filtered.length} {filtered.length === 1 ? 'coincidencia' : 'coincidencias'} para "{activeSearch}"
+            </span>
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="text-teal-700 hover:text-teal-950 underline font-bold cursor-pointer ml-1"
+            >
+              Limpiar
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* HIGHLIGHTED NEXT BIRTHDAY HERO BANNER (hidden during active search to prioritize search results) */}
+      {closestBirthday && closestBirthday.countdown && !activeSearch && (
         <div className="relative overflow-hidden bg-gradient-to-br from-[#2a373b] via-[#202b2e] to-[#161d1f] text-white rounded-3xl p-5 sm:p-7 shadow-lg border border-slate-700/50">
           {/* Subtle glow circle */}
           <div className="absolute top-0 right-0 -mt-8 -mr-8 w-60 h-60 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -252,88 +346,135 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
 
       {/* Empty State */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200 space-y-3">
-          <div className="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-2">
-            <Cake className="w-7 h-7" />
-          </div>
-          <h3 className="font-bold text-slate-900 text-base">No hay personas registradas en esta sección</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            El administrador puede registrar las fechas de cumpleaños y aniversarios para que todo el equipo de SOLMAR pueda verlas y enviar felicitaciones.
-          </p>
-          {canPublish && handleNewCelebrationFn && (
+        activeSearch ? (
+          <div className="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <Search className="w-7 h-7" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">
+              No se encontraron festejos para "{activeSearch}"
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Intenta buscar por otro nombre de colaborador, sector (ej. Ventas, Taller) o mes de festejo.
+            </p>
             <button
-              onClick={handleNewCelebrationFn}
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#38484c] text-white font-semibold text-xs rounded-xl hover:bg-[#2c393c]"
+              type="button"
+              onClick={handleClearSearch}
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] text-white font-semibold text-xs rounded-xl hover:bg-[#2c393c] cursor-pointer transition-colors shadow-xs"
             >
-              <Plus className="w-4 h-4" />
-              <span>Agregar primer festejo</span>
+              <X className="w-3.5 h-3.5" />
+              <span>Restablecer búsqueda</span>
             </button>
-          )}
-        </div>
-      ) : (
-        /* Grid List */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((item) => {
-            const isBirthday = item.type === 'birthday';
-            const isSent = greetingSuccessId === item.id;
-            const isConfirmingDelete = confirmDeleteId === item.id;
-            const countdown = getCelebrationCountdown(item.date);
-
-            return (
-              <div
-                key={item.id}
-                className={`bg-white rounded-3xl border p-6 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
-                  isBirthday ? 'border-pink-200' : 'border-amber-200'
-                }`}
+          </div>
+        ) : (
+          <div className="text-center py-16 px-4 bg-white rounded-3xl border border-slate-200 space-y-3">
+            <div className="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <Cake className="w-7 h-7" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">No hay personas registradas en esta sección</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              El administrador puede registrar las fechas de cumpleaños y aniversarios para que todo el equipo de SOLMAR pueda verlas y enviar felicitaciones.
+            </p>
+            {canPublish && handleNewCelebrationFn && (
+              <button
+                onClick={handleNewCelebrationFn}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#38484c] text-white font-semibold text-xs rounded-xl hover:bg-[#2c393c]"
               >
-                {/* Decorative Top Accent Banner */}
+                <Plus className="w-4 h-4" />
+                <span>Agregar primer festejo</span>
+              </button>
+            )}
+          </div>
+        )
+      ) : (
+        <div className="space-y-4">
+          {/* Section title & ordering indicator */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-1 px-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>
+                  {activeTab === 'birthdays'
+                    ? 'Cumpleaños'
+                    : activeTab === 'anniversaries'
+                    ? 'Aniversarios'
+                    : 'Todas las Celebraciones'}
+                </span>
+              </h3>
+              <span className="text-xs text-slate-400 font-semibold">({filtered.length})</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-teal-800 bg-teal-50 px-3 py-1 rounded-xl border border-teal-200/60 font-semibold">
+              <Clock className="w-3.5 h-3.5 text-teal-700" />
+              <span>Ordenados: más próximos primero</span>
+            </div>
+          </div>
+
+          {/* Grid List */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filtered.map((item) => {
+              const isBirthday = item.type === 'birthday';
+              const isSent = greetingSuccessId === item.id;
+              const isConfirmingDelete = confirmDeleteId === item.id;
+              const countdown = getCelebrationCountdown(item.date);
+
+              return (
                 <div
-                  className={`h-1.5 absolute top-0 left-0 right-0 ${
-                    isBirthday
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-500'
-                      : 'bg-gradient-to-r from-amber-500 to-yellow-500'
+                  key={item.id}
+                  className={`bg-white rounded-3xl border p-6 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
+                    isBirthday ? 'border-pink-200' : 'border-amber-200'
                   }`}
-                />
+                >
+                  {/* Decorative Top Accent Banner */}
+                  <div
+                    className={`h-1.5 absolute top-0 left-0 right-0 ${
+                      isBirthday
+                        ? 'bg-gradient-to-r from-pink-500 to-rose-500'
+                        : 'bg-gradient-to-r from-amber-500 to-yellow-500'
+                    }`}
+                  />
 
-                <div>
-                  {/* Header Badge & Action Controls */}
-                  <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          isBirthday
-                            ? 'bg-pink-50 text-pink-700 border border-pink-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {isBirthday ? (
-                          <>
-                            <Cake className="w-3.5 h-3.5 text-pink-500" />
-                            <span>Cumpleaños</span>
-                          </>
-                        ) : (
-                          <>
-                            <Award className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{item.yearsAtCompany || 1} años</span>
-                          </>
-                        )}
-                      </span>
-
-                      {/* Countdown tag */}
-                      {countdown && (
+                  <div>
+                    {/* Header Badge & Action Controls */}
+                    <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                            countdown.isToday
-                              ? 'bg-rose-500 text-white animate-pulse'
-                              : countdown.isTomorrow
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-slate-100 text-slate-600'
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            isBirthday
+                              ? 'bg-pink-50 text-pink-700 border border-pink-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
-                          {countdown.relativeLabel}
+                          {isBirthday ? (
+                            <>
+                              <Cake className="w-3.5 h-3.5 text-pink-500" />
+                              <span>Cumpleaños</span>
+                            </>
+                          ) : (
+                            <>
+                              <Award className="w-3.5 h-3.5 text-amber-500" />
+                              <span>{item.yearsAtCompany || 1} años</span>
+                            </>
+                          )}
                         </span>
-                      )}
-                    </div>
+
+                        {/* Countdown tag */}
+                        {countdown && (
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                              countdown.isToday
+                                ? 'bg-rose-500 text-white animate-pulse'
+                                : countdown.isTomorrow
+                                ? 'bg-amber-500 text-white'
+                                : countdown.isThisWeek
+                                ? 'bg-teal-700 text-white'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {countdown.relativeLabel}
+                          </span>
+                        )}
+                      </div>
 
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
@@ -466,6 +607,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

@@ -190,3 +190,25 @@ export function getSortedUpcomingBirthdays(
     allEnriched: enriched,
   };
 }
+
+/**
+ * Sorts any list of celebration items (birthdays, anniversaries, or combined)
+ * by upcoming date so the most immediate celebrations appear first (0 days, 1 day, 2 days... 365 days).
+ */
+export function sortCelebrationsByUpcoming(
+  celebrations: CelebrationItem[],
+  referenceDate = new Date()
+): CelebrationItem[] {
+  return [...celebrations].sort((a, b) => {
+    const cdA = getCelebrationCountdown(a.date, referenceDate);
+    const cdB = getCelebrationCountdown(b.date, referenceDate);
+    const daysA = cdA !== null ? cdA.daysUntil : 9999;
+    const daysB = cdB !== null ? cdB.daysUntil : 9999;
+
+    if (daysA !== daysB) {
+      return daysA - daysB;
+    }
+    // Secondary alphabetical tie-break by name
+    return (a.employeeName || '').localeCompare(b.employeeName || '');
+  });
+}
