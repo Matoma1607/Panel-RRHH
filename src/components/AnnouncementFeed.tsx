@@ -40,9 +40,12 @@ interface AnnouncementFeedProps {
   globalSearch?: string;
   setGlobalSearch?: (s: string) => void;
   highlightedId?: string | null;
+  userName?: string;
+  onSaveUserName?: (name: string) => void;
+  onOpenProfileModal?: () => void;
   onLike: (id: string) => void;
-  onAddComment?: (id: string, text: string) => void;
-  onComment?: (id: string, text: string) => void;
+  onAddComment?: (id: string, text: string, authorName?: string) => void;
+  onComment?: (id: string, text: string, authorName?: string) => void;
   onNewAnnouncement?: () => void;
   onOpenNewModal?: () => void;
   onEditAnnouncement?: (announcement: Announcement) => void;
@@ -73,6 +76,9 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
   globalSearch,
   setGlobalSearch,
   highlightedId,
+  userName,
+  onSaveUserName,
+  onOpenProfileModal,
   onLike,
   onAddComment,
   onComment,
@@ -85,6 +91,8 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | 'Todos'>('Todos');
   const [openCommentFor, setOpenCommentFor] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [inlineCommentNames, setInlineCommentNames] = useState<Record<string, string>>({});
+  const [nameErrorFor, setNameErrorFor] = useState<string | null>(null);
   const [sharingAnnouncement, setSharingAnnouncement] = useState<Announcement | null>(null);
 
   // Admin filter allows switching between auditing the active branch or viewing all
@@ -137,10 +145,29 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
   const regularAnnouncements = filtered.filter((item) => !item.pinned);
 
   const handleCommentSubmit = (id: string) => {
-    const text = commentInputs[id] || '';
-    if (text.trim() && handleCommentFn) {
-      handleCommentFn(id, text.trim());
+    const text = (commentInputs[id] || '').trim();
+    if (!text) return;
+
+    let authorName: string;
+    if (isAdminLoggedIn || role === 'admin') {
+      authorName = 'RRHH SOLMAR';
+    } else {
+      const explicitName = (inlineCommentNames[id] !== undefined ? inlineCommentNames[id] : (userName || '')).trim();
+      if (!explicitName && !userName) {
+        setNameErrorFor(id);
+        return;
+      }
+      const effectiveName = explicitName || userName || 'Colaborador';
+      if (onSaveUserName && explicitName && explicitName !== userName) {
+        onSaveUserName(effectiveName);
+      }
+      authorName = userBranch ? `${effectiveName} (${userBranch})` : effectiveName;
+    }
+
+    if (handleCommentFn) {
+      handleCommentFn(id, text, authorName);
       setCommentInputs((prev) => ({ ...prev, [id]: '' }));
+      setNameErrorFor(null);
     }
   };
 
@@ -387,14 +414,14 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                     {canPublish && (
                       <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
                         <button
-                          onClick={() => onEditAnnouncement?.(item)}
+                          onClick={() => onEditAnnouncement(item)}
                           title="Editar comunicado"
                           className="p-1.5 text-slate-400 hover:text-[#38484c] hover:bg-slate-100 rounded-lg transition-colors"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDeleteAnnouncement?.(item.id)}
+                          onClick={() => onDeleteAnnouncement(item.id)}
                           title="Eliminar comunicado"
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
@@ -496,44 +523,117 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                       Sé el primero en dejar un comentario o pregunta.
                     </p>
                   ) : (
-                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                      {item.comments.map((c) => (
-                        <div
-                          key={c.id}
-                          className="p-3 bg-white rounded-xl border border-slate-200 text-xs shadow-2xs"
-                        >
-                          <div className="flex items-center justify-between font-semibold text-slate-800 mb-1">
-                            <span>{c.authorName}</span>
-                            <span className="text-[10px] text-slate-400 font-normal">{c.date}</span>
+                    <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                      {item.comments.map((c) => {
+                        const cleanName = c.authorName.replace(/[()]/g, '').trim();
+                        const parts = cleanName.split(/\s+/);
+                        const initials =
+                          parts.length >= 2
+                            ? (parts[0][0] + parts[1][0]).toUpperCase()
+                            : (parts[0] || 'C').substring(0, 2).toUpperCase();
+
+                        return (
+                          <div
+                            key={c.id}
+                            className="p-3 bg-white rounded-2xl border border-slate-200 text-xs shadow-2xs space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between font-semibold text-slate-800">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-[#38484c] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  {initials}
+                                </div>
+                                <span className="font-bold text-slate-900">{c.authorName}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-normal">{c.date}</span>
+                            </div>
+                            <p className="text-slate-700 leading-relaxed pl-8">{c.text}</p>
                           </div>
-                          <p className="text-slate-600 leading-normal">{c.text}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
-                  {/* Comment Input */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="text"
-                      placeholder="Escribe un comentario o pregunta..."
-                      value={commentInputs[item.id] || ''}
-                      onChange={(e) =>
-                        setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCommentSubmit(item.id);
-                      }}
-                      className="flex-1 px-3.5 py-2.5 sm:py-2 bg-white text-sm sm:text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#38484c] text-slate-800"
-                    />
-                    <button
-                      onClick={() => handleCommentSubmit(item.id)}
-                      className="p-2.5 sm:p-2 bg-[#38484c] hover:bg-[#2c393c] active:bg-[#20292c] text-white rounded-xl text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-                      title="Publicar comentario"
-                      aria-label="Publicar comentario"
-                    >
-                      <Send className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    </button>
+                  {/* Comment Author Identity Bar & Input */}
+                  <div className="pt-2 space-y-2 border-t border-slate-200/60">
+                    {!isAdminLoggedIn && (
+                      <div className="space-y-1 text-xs">
+                        {userName ? (
+                          <div className="flex items-center gap-1.5 text-slate-600">
+                            <User className="w-3.5 h-3.5 text-teal-700" />
+                            <span>
+                              Comentando como:{' '}
+                              <strong className="text-slate-900">{userName}</strong>
+                              {userBranch ? ` (${userBranch})` : ''}
+                            </span>
+                            {onOpenProfileModal && (
+                              <button
+                                type="button"
+                                onClick={onOpenProfileModal}
+                                className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold underline cursor-pointer ml-1"
+                              >
+                                (cambiar nombre)
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <input
+                                type="text"
+                                placeholder="Tu nombre y apellido (ej. Mariana Ruiz)"
+                                value={
+                                  inlineCommentNames[item.id] !== undefined
+                                    ? inlineCommentNames[item.id]
+                                    : ''
+                                }
+                                onChange={(e) => {
+                                  setInlineCommentNames({
+                                    ...inlineCommentNames,
+                                    [item.id]: e.target.value,
+                                  });
+                                  if (nameErrorFor === item.id) setNameErrorFor(null);
+                                }}
+                                className={`flex-1 px-3 py-1.5 bg-white text-xs rounded-xl border ${
+                                  nameErrorFor === item.id
+                                    ? 'border-rose-400 ring-2 ring-rose-400/20'
+                                    : 'border-slate-300'
+                                } text-slate-800 placeholder:text-slate-400 font-medium focus:outline-none focus:border-[#38484c]`}
+                              />
+                            </div>
+                            {nameErrorFor === item.id && (
+                              <p className="text-[11px] text-rose-600 font-semibold pl-5">
+                                Por favor escribe tu nombre antes de publicar el comentario.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Comment Input */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Escribe un comentario o pregunta..."
+                        value={commentInputs[item.id] || ''}
+                        onChange={(e) =>
+                          setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleCommentSubmit(item.id);
+                        }}
+                        className="flex-1 px-3.5 py-2.5 sm:py-2 bg-white text-sm sm:text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#38484c] text-slate-800"
+                      />
+                      <button
+                        onClick={() => handleCommentSubmit(item.id)}
+                        className="p-2.5 sm:p-2 bg-[#38484c] hover:bg-[#2c393c] active:bg-[#20292c] text-white rounded-xl text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+                        title="Publicar comentario"
+                        aria-label="Publicar comentario"
+                      >
+                        <Send className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

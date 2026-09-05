@@ -15,6 +15,7 @@ import { AnnouncementEditorModal } from './components/modals/AnnouncementEditorM
 import { DocumentEditorModal } from './components/modals/DocumentEditorModal';
 import { CelebrationEditorModal } from './components/modals/CelebrationEditorModal';
 import { BranchSelectorModal } from './components/modals/BranchSelectorModal';
+import { UserProfileModal } from './components/modals/UserProfileModal';
 
 // Types
 import { Announcement, DocumentItem, CelebrationItem, BranchName, ALL_BRANCHES, parseBranchFromQuery } from './types';
@@ -96,6 +97,27 @@ export default function App() {
     return true; // Show initial selection if branch not chosen yet
   });
 
+  const [userName, setUserName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('solmar_user_name') || '';
+    }
+    return '';
+  });
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const handleSaveUserName = (name: string) => {
+    const trimmed = name.trim();
+    setUserName(trimmed);
+    if (typeof window !== 'undefined') {
+      if (trimmed) {
+        localStorage.setItem('solmar_user_name', trimmed);
+      } else {
+        localStorage.removeItem('solmar_user_name');
+      }
+    }
+  };
+
   useEffect(() => {
     // Check URL parameters for deep linking & branch context
     const params = new URLSearchParams(window.location.search);
@@ -169,9 +191,17 @@ export default function App() {
     setIsAnnouncementModalOpen(true);
   };
 
-  const handleAddComment = (id: string, text: string) => {
-    const authorName = isAdminLoggedIn || role === 'admin' ? 'RRHH SOLMAR' : `Colaborador (${userBranch})`;
-    addCommentToAnnouncement(id, text, authorName);
+  const handleAddComment = (id: string, text: string, explicitAuthorName?: string) => {
+    let author = explicitAuthorName;
+    if (!author) {
+      if (isAdminLoggedIn || role === 'admin') {
+        author = 'RRHH SOLMAR';
+      } else {
+        const effectiveName = userName.trim() || 'Colaborador';
+        author = userBranch ? `${effectiveName} (${userBranch})` : effectiveName;
+      }
+    }
+    addCommentToAnnouncement(id, text, author);
   };
 
   const handleEditAnnouncement = (ann: Announcement) => {
@@ -245,6 +275,8 @@ export default function App() {
         userBranch={userBranch}
         isDirectBranchLink={isDirectBranchLink}
         onOpenBranchPicker={isAdminLoggedIn ? () => setIsBranchPickerOpen(true) : undefined}
+        userName={userName}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
         notifications={notifications}
         onMarkNotificationAsRead={markNotificationAsRead}
         onClearNotifications={clearNotifications}
@@ -296,6 +328,9 @@ export default function App() {
               globalSearch={globalSearch}
               setGlobalSearch={setGlobalSearch}
               highlightedId={highlightedItemId}
+              userName={userName}
+              onSaveUserName={handleSaveUserName}
+              onOpenProfileModal={() => setIsProfileModalOpen(true)}
             />
           )}
 
@@ -330,6 +365,9 @@ export default function App() {
               onDeleteCelebration={deleteCelebration}
               globalSearch={globalSearch}
               setGlobalSearch={setGlobalSearch}
+              userName={userName}
+              onSaveUserName={handleSaveUserName}
+              userBranch={userBranch}
             />
           )}
 
@@ -393,6 +431,15 @@ export default function App() {
         onClose={() => setIsCelebrationModalOpen(false)}
         onSave={saveCelebration}
         editingCelebration={editingCelebration}
+      />
+
+      {/* Collaborator Profile Identification Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentName={userName}
+        userBranch={userBranch}
+        onSaveName={handleSaveUserName}
       />
 
       </div>

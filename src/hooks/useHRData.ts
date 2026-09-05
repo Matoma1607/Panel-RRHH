@@ -3,6 +3,7 @@ import {
   Announcement,
   DocumentItem,
   CelebrationItem,
+  CelebrationGreeting,
   CompanyInfo,
   UserRole,
   AppNotification
@@ -436,11 +437,29 @@ export function useHRData() {
     });
   };
 
-  const sendGreeting = (celebrationId: string) => {
+  const sendGreeting = (
+    celebrationId: string,
+    greetingData?: { authorName: string; branch?: string; message?: string }
+  ) => {
     setCelebrations((prev) =>
       prev.map((c) => {
         if (c.id === celebrationId) {
-          const updated = { ...c, greetingsCount: c.greetingsCount + 1 };
+          const authorName = (greetingData?.authorName || '').trim() || 'Colaborador';
+          const newGreeting: CelebrationGreeting = {
+            id: 'g-' + Date.now(),
+            authorName,
+            branch: greetingData?.branch,
+            message:
+              greetingData?.message?.trim() ||
+              (c.type === 'birthday' ? '¡Muy feliz cumpleaños! 🎉' : '¡Feliz aniversario! 👏'),
+            date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+          };
+          const existingGreetings = c.greetings || [];
+          const updated = {
+            ...c,
+            greetingsCount: (c.greetingsCount || 0) + 1,
+            greetings: [newGreeting, ...existingGreetings],
+          };
           saveDocToFirestore('celebrations', celebrationId, updated);
           return updated;
         }

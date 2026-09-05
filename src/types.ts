@@ -152,6 +152,14 @@ export interface DocumentItem {
   targetBranch?: 'Todas' | BranchName;
 }
 
+export interface CelebrationGreeting {
+  id: string;
+  authorName: string;
+  branch?: string;
+  message?: string;
+  date: string;
+}
+
 export interface CelebrationItem {
   id: string;
   employeeName: string;
@@ -162,6 +170,7 @@ export interface CelebrationItem {
   yearsAtCompany?: number;
   gender?: 'male' | 'female' | 'neutral';
   greetingsCount: number;
+  greetings?: CelebrationGreeting[];
   createdAt?: number;
 }
 

@@ -18,7 +18,8 @@ import {
   X,
   Radio,
   FileText,
-  Cake
+  Cake,
+  User
 } from 'lucide-react';
 import { NotificationsPopover } from './NotificationsPopover';
 
@@ -31,6 +32,8 @@ interface NavbarProps {
   onOpenBranchPicker?: () => void;
   activeArea?: string;
   activeEmployeeName?: string;
+  userName?: string;
+  onOpenProfileModal?: () => void;
   notifications?: AppNotification[];
   onMarkNotificationAsRead?: (id: string) => void;
   onClearNotifications?: () => void;
@@ -58,6 +61,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   isDirectBranchLink = false,
   onOpenBranchPicker,
   activeArea,
+  userName,
+  onOpenProfileModal,
   notifications = [],
   onMarkNotificationAsRead = () => {},
   onClearNotifications = () => {},
@@ -263,6 +268,26 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Search className="w-4 h-4" />
             </button>
             
+            {/* Collaborator Name Identification Pill */}
+            {!isAdminLoggedIn && onOpenProfileModal && (
+              <button
+                type="button"
+                onClick={onOpenProfileModal}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/90 shadow-2xs transition-all cursor-pointer"
+                title={
+                  userName
+                    ? `Colaborador identificado: ${userName} (clic para cambiar)`
+                    : 'Ingresar tu nombre para identificarte en comentarios y saludos de cumpleaños'
+                }
+              >
+                <User className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                <span className="truncate max-w-[100px] sm:max-w-[130px] font-bold text-slate-800">
+                  {userName || 'Mi Nombre'}
+                </span>
+                <span className="text-[10px] text-teal-600 font-mono">✎</span>
+              </button>
+            )}
+
             {/* Active Branch Pill */}
             {userBranch && (
               isAdminLoggedIn ? (

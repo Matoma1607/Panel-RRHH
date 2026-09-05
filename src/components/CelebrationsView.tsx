@@ -20,18 +20,27 @@ import {
   X
 } from 'lucide-react';
 import { ShareModal } from './modals/ShareModal';
+import { SendGreetingModal } from './modals/SendGreetingModal';
+import { GreetingsListModal } from './modals/GreetingsListModal';
 import {
   getCelebrationCountdown,
   getSortedUpcomingBirthdays,
   sortCelebrationsByUpcoming,
 } from '../utils/celebrationUtils';
 import { resolveCelebrationAvatar } from '../utils/avatarUtils';
+import { BranchName } from '../types';
 
 interface CelebrationsViewProps {
   celebrations: CelebrationItem[];
   role: UserRole;
   canPublish?: boolean;
-  onSendGreeting: (id: string) => void;
+  userName?: string;
+  onSaveUserName?: (name: string) => void;
+  userBranch?: BranchName;
+  onSendGreeting: (
+    id: string,
+    greetingData?: { authorName: string; branch?: string; message?: string }
+  ) => void;
   onNewCelebration?: () => void;
   onOpenNewModal?: () => void;
   onEditCelebration?: (celebration: CelebrationItem) => void;
@@ -44,6 +53,9 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
   celebrations,
   role,
   canPublish = role === 'admin',
+  userName = '',
+  onSaveUserName,
+  userBranch,
   onSendGreeting,
   onNewCelebration,
   onOpenNewModal,
@@ -56,6 +68,8 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
   const [greetingSuccessId, setGreetingSuccessId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [sharingCelebration, setSharingCelebration] = useState<CelebrationItem | null>(null);
+  const [greetingModalCelebration, setGreetingModalCelebration] = useState<CelebrationItem | null>(null);
+  const [viewGreetingsCelebration, setViewGreetingsCelebration] = useState<CelebrationItem | null>(null);
   const [localSearch, setLocalSearch] = useState<string>('');
 
   const handleNewCelebrationFn = onNewCelebration || onOpenNewModal;
@@ -303,7 +317,16 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                 </button>
 
                 <button
-                  onClick={() => handleGreet(closestBirthday.item.id)}
+                  onClick={() => setViewGreetingsCelebration(closestBirthday.item)}
+                  title="Ver quiénes enviaron felicitaciones"
+                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer"
+                >
+                  <PartyPopper className="w-3.5 h-3.5 text-pink-300" />
+                  <span>Saludos ({closestBirthday.item.greetingsCount})</span>
+                </button>
+
+                <button
+                  onClick={() => setGreetingModalCelebration(closestBirthday.item)}
                   disabled={greetingSuccessId === closestBirthday.item.id}
                   className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
                     greetingSuccessId === closestBirthday.item.id
@@ -319,7 +342,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Enviar Saludo ({closestBirthday.item.greetingsCount})</span>
+                      <span>Enviar Saludo</span>
                     </>
                   )}
                 </button>
@@ -555,10 +578,21 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
 
                 {/* Action Button & Greetings Counter */}
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                    <PartyPopper className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{item.greetingsCount} saludos</span>
-                  </span>
+                  <button
+                    onClick={() => setViewGreetingsCelebration(item)}
+                    className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5 cursor-pointer group"
+                    title="Ver quiénes enviaron felicitaciones"
+                  >
+                    <PartyPopper className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                    <span className="hover:underline">
+                      {item.greetingsCount} {item.greetingsCount === 1 ? 'saludo' : 'saludos'}
+                    </span>
+                    {item.greetings && item.greetings.length > 0 && (
+                      <span className="text-[10px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full font-bold">
+                        Ver
+                      </span>
+                    )}
+                  </button>
 
                   <div className="flex items-center gap-1.5">
                     {isBirthday && (
@@ -580,7 +614,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                     </button>
 
                     <button
-                      onClick={() => handleGreet(item.id)}
+                      onClick={() => setGreetingModalCelebration(item)}
                       disabled={isSent}
                       className={`px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
                         isSent
@@ -617,6 +651,29 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
         onClose={() => setSharingCelebration(null)}
         item={sharingCelebration}
         type="celebration"
+      />
+
+      {/* Send Greeting with Identification Modal */}
+      <SendGreetingModal
+        isOpen={!!greetingModalCelebration}
+        onClose={() => setGreetingModalCelebration(null)}
+        celebration={greetingModalCelebration}
+        currentUserName={userName}
+        userBranch={userBranch}
+        onSendGreeting={(id, data) => {
+          onSendGreeting(id, data);
+          setGreetingSuccessId(id);
+          setTimeout(() => setGreetingSuccessId(null), 3500);
+        }}
+        onSaveUserName={onSaveUserName}
+      />
+
+      {/* Greetings List Modal */}
+      <GreetingsListModal
+        isOpen={!!viewGreetingsCelebration}
+        onClose={() => setViewGreetingsCelebration(null)}
+        celebration={viewGreetingsCelebration}
+        onOpenSendModal={(cel) => setGreetingModalCelebration(cel)}
       />
     </div>
   );

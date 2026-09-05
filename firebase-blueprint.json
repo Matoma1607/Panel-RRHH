@@ -49,7 +49,8 @@
         "type": { "type": "string", "maxLength": 50 },
         "date": { "type": "string", "maxLength": 64 },
         "yearsAtCompany": { "type": "number" },
-        "greetingsCount": { "type": "number" }
+        "greetingsCount": { "type": "number" },
+        "greetings": { "type": "array" }
       },
       "required": ["id", "employeeName", "type", "date"]
     },
