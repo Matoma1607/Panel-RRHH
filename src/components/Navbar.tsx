@@ -22,6 +22,7 @@ import {
   Cake,
   User,
   CheckCheck,
+  Building2,
   ChevronRight,
 } from 'lucide-react';
 
@@ -75,7 +76,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   setGlobalSearch,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Notifications scoped to active branch
   const visibleNotifications = useMemo(() => {
@@ -106,20 +109,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#dbe2dc] w-full shadow-2xs">
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 relative">
-            
-            {/* 1. Left: Buscador */}
-            <div className="flex items-center w-48 sm:w-64 md:w-72">
-              <div className="relative w-full">
+        <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6">
+          {/* Mobile Search Active Mode */}
+          {isMobileSearchOpen ? (
+            <div className="flex items-center w-full h-14 gap-2 animate-in fade-in duration-150 sm:hidden">
+              <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <input
-                  ref={searchInputRef}
+                  ref={mobileSearchInputRef}
                   type="text"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
                   placeholder="Buscar en el portal..."
-                  className="w-full pl-8 pr-7 py-1.5 bg-[#eef1ee]/70 hover:bg-[#eef1ee] focus:bg-white text-xs rounded-md border border-[#dbe2dc] focus:border-[#1c3d34] focus:outline-none transition-all placeholder:text-slate-400 text-[#0f2620]"
+                  className="w-full pl-8 pr-7 py-1.5 bg-[#eef1ee] focus:bg-white text-xs rounded-md border border-[#1c3d34] focus:outline-none transition-all placeholder:text-slate-400 text-[#0f2620]"
+                  autoFocus
                 />
                 {globalSearch && (
                   <button
@@ -132,56 +135,114 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
                 )}
               </div>
-            </div>
-
-            {/* 2. Center: Logo "SOLMAR / PORTAL INTERNO" Centrado */}
-            <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer select-none"
-              onClick={() => {
-                setActiveTab('feed');
-                if (role === 'admin' && !isAdminLoggedIn) {
-                  onRoleToggle('employee');
-                }
-              }}
-              title="Ir al inicio de SOLMAR"
-            >
-              <span className="font-black text-xl sm:text-2xl tracking-widest text-[#0f2620] uppercase leading-none">
-                {companyInfo.name || 'SOLMAR'}
-              </span>
-              <span className="text-[9px] font-extrabold tracking-widest text-[#1c3d34] uppercase mt-0.5">
-                PORTAL INTERNO
-              </span>
-            </div>
-
-            {/* 3. Right: Botón de Menú con Badge de Notificación */}
-            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsMenuOpen(true)}
-                className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
-                  isMenuOpen
-                    ? 'bg-[#0f2620] text-white border-[#0f2620]'
-                    : 'bg-white hover:bg-[#eef1ee] text-[#0f2620] border-[#dbe2dc] shadow-2xs'
-                }`}
-                title="Abrir menú"
-                aria-label="Menú de opciones"
+                onClick={() => {
+                  setIsMobileSearchOpen(false);
+                  setGlobalSearch('');
+                }}
+                className="px-2.5 py-1.5 rounded-md text-xs font-bold text-slate-600 hover:text-[#0f2620] hover:bg-[#eef1ee] transition-colors cursor-pointer shrink-0"
               >
-                {isAdminLoggedIn && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Modo RRHH Activo" />
-                )}
-                <Menu className="w-4 h-4" />
-                <span className="hidden sm:inline">Menú</span>
-
-                {/* Badge de notificación en terracota cálido */}
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-[#c5622f] text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-2xs ring-2 ring-white">
-                    {unreadCount}
-                  </span>
-                )}
+                Cerrar
               </button>
             </div>
+          ) : (
+            <div className="flex items-center justify-between h-14 relative w-full">
+              
+              {/* 1. Left: Buscador Desktop y Botón Móvil */}
+              <div className="flex items-center">
+                {/* Desktop Search Bar (Hidden on Mobile) */}
+                <div className="hidden sm:flex items-center sm:w-52 md:w-64 lg:w-72">
+                  <div className="relative w-full">
+                    <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={globalSearch}
+                      onChange={(e) => setGlobalSearch(e.target.value)}
+                      placeholder="Buscar en el portal..."
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#eef1ee]/70 hover:bg-[#eef1ee] focus:bg-white text-xs rounded-md border border-[#dbe2dc] focus:border-[#1c3d34] focus:outline-none transition-all placeholder:text-slate-400 text-[#0f2620]"
+                    />
+                    {globalSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setGlobalSearch('')}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                        title="Limpiar búsqueda"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-          </div>
+                {/* Mobile Search Button (Compact, Zero Collision) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileSearchOpen(true);
+                    setTimeout(() => mobileSearchInputRef.current?.focus(), 100);
+                  }}
+                  className="sm:hidden relative flex items-center justify-center w-8 h-8 rounded-md bg-[#eef1ee] hover:bg-[#dbe2dc] text-[#0f2620] border border-[#dbe2dc] shadow-2xs cursor-pointer transition-colors"
+                  title="Buscar en el portal"
+                  aria-label="Buscar en el portal"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  {globalSearch && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#c5622f] ring-2 ring-white" />
+                  )}
+                </button>
+              </div>
+
+              {/* 2. Center: Logo "SOLMAR / PORTAL INTERNO" Centrado */}
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer select-none max-w-[170px] sm:max-w-none text-center pointer-events-auto"
+                onClick={() => {
+                  setActiveTab('feed');
+                  if (role === 'admin' && !isAdminLoggedIn) {
+                    onRoleToggle('employee');
+                  }
+                }}
+                title="Ir al inicio de SOLMAR"
+              >
+                <span className="font-black text-lg sm:text-2xl tracking-widest text-[#0f2620] uppercase leading-none">
+                  {companyInfo.name || 'SOLMAR'}
+                </span>
+                <span className="text-[8px] sm:text-[9px] font-extrabold tracking-widest text-[#1c3d34] uppercase mt-0.5">
+                  PORTAL INTERNO
+                </span>
+              </div>
+
+              {/* 3. Right: Botón de Menú con Badge de Notificación */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen(true)}
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
+                    isMenuOpen
+                      ? 'bg-[#0f2620] text-white border-[#0f2620]'
+                      : 'bg-white hover:bg-[#eef1ee] text-[#0f2620] border-[#dbe2dc] shadow-2xs'
+                  }`}
+                  title="Abrir menú"
+                  aria-label="Menú de opciones"
+                >
+                  {isAdminLoggedIn && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Modo RRHH Activo" />
+                  )}
+                  <Menu className="w-4 h-4" />
+                  <span className="hidden sm:inline">Menú</span>
+
+                  {/* Badge de notificación en terracota cálido */}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-[#c5622f] text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-2xs ring-2 ring-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+            </div>
+          )}
         </div>
       </header>
 
@@ -234,14 +295,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </p>
                     </div>
                   </div>
-                  <div className="mt-2.5 pt-2 border-t border-[#dbe2dc] flex justify-end">
+                  <div className="mt-2.5 pt-2 border-t border-[#dbe2dc] flex items-center justify-between gap-2">
+                    {onOpenBranchPicker && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          onOpenBranchPicker();
+                        }}
+                        className="text-[11px] font-bold text-[#1c3d34] hover:text-[#0f2620] flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded border border-[#dbe2dc] hover:bg-[#dbe2dc]/60 transition-colors shadow-2xs"
+                        title="Corregir o cambiar la sede de este dispositivo"
+                      >
+                        <Building2 className="w-3 h-3 text-[#1c3d34]" />
+                        <span>Cambiar sede</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setIsMenuOpen(false);
                         onOpenProfileModal?.();
                       }}
-                      className="text-xs font-bold text-[#1c3d34] hover:underline cursor-pointer"
+                      className="text-xs font-bold text-[#1c3d34] hover:underline cursor-pointer ml-auto"
                     >
                       {userName ? 'Cambiar mi nombre' : '+ Configurar mi nombre'}
                     </button>
