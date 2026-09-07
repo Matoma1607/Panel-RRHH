@@ -252,7 +252,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative text-slate-800 font-sans antialiased pb-20 md:pb-8 w-full max-w-full overflow-x-hidden bg-[#e2eaeb]">
+    <div className="min-h-screen relative text-slate-800 font-sans antialiased pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:pb-8 w-full max-w-full overflow-x-hidden bg-[#e2eaeb]">
       
       {/* Ambient translucent brand background wash & soft glows */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">

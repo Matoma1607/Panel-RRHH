@@ -166,12 +166,12 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
           {/* Filter Switcher */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium">
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium w-full sm:w-auto overflow-x-auto scrollbar-none">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer ${
                 activeTab === 'all' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600'
               }`}
             >
@@ -179,7 +179,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('birthdays')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
                 activeTab === 'birthdays' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600'
               }`}
             >
@@ -188,7 +188,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('anniversaries')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
                 activeTab === 'anniversaries' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600'
               }`}
             >
@@ -201,7 +201,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
           {canPublish && handleNewCelebrationFn && (
             <button
               onClick={handleNewCelebrationFn}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-all w-full sm:w-auto shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Agregar Festejo</span>
@@ -305,30 +305,30 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
             </div>
 
             {/* Right Col: Actions & Other Near Birthdays */}
-            <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-3 shrink-0">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col items-stretch sm:items-end gap-3 shrink-0 w-full sm:w-auto">
+              <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => openWhatsAppGreeting(closestBirthday.item)}
                   title="Felicitar por WhatsApp"
-                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px]"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>WhatsApp</span>
                 </button>
 
                 <button
                   onClick={() => setViewGreetingsCelebration(closestBirthday.item)}
                   title="Ver quiénes enviaron felicitaciones"
-                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer"
+                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer min-h-[38px]"
                 >
-                  <PartyPopper className="w-3.5 h-3.5 text-pink-300" />
-                  <span>Saludos ({closestBirthday.item.greetingsCount})</span>
+                  <PartyPopper className="w-3.5 h-3.5 text-pink-300 shrink-0" />
+                  <span className="truncate">Saludos ({closestBirthday.item.greetingsCount})</span>
                 </button>
 
                 <button
                   onClick={() => setGreetingModalCelebration(closestBirthday.item)}
                   disabled={greetingSuccessId === closestBirthday.item.id}
-                  className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
+                  className={`col-span-2 sm:col-span-1 px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px] ${
                     greetingSuccessId === closestBirthday.item.id
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white'
@@ -336,12 +336,12 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                 >
                   {greetingSuccessId === closestBirthday.item.id ? (
                     <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>¡Saludo enviado!</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="w-3.5 h-3.5 shrink-0" />
                       <span>Enviar Saludo</span>
                     </>
                   )}
@@ -444,7 +444,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-3xl border p-6 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
+                  className={`bg-white rounded-2xl sm:rounded-3xl border p-4 sm:p-6 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
                     isBirthday ? 'border-pink-200' : 'border-amber-200'
                   }`}
                 >
@@ -577,13 +577,13 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                 </div>
 
                 {/* Action Button & Greetings Counter */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
                   <button
                     onClick={() => setViewGreetingsCelebration(item)}
-                    className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5 cursor-pointer group"
+                    className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5 cursor-pointer group shrink-0"
                     title="Ver quiénes enviaron felicitaciones"
                   >
-                    <PartyPopper className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                    <PartyPopper className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform shrink-0" />
                     <span className="hover:underline">
                       {item.greetingsCount} {item.greetingsCount === 1 ? 'saludo' : 'saludos'}
                     </span>
@@ -594,7 +594,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                     )}
                   </button>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto">
                     {isBirthday && (
                       <button
                         onClick={() => openWhatsAppGreeting(item)}
@@ -616,7 +616,7 @@ export const CelebrationsView: React.FC<CelebrationsViewProps> = ({
                     <button
                       onClick={() => setGreetingModalCelebration(item)}
                       disabled={isSent}
-                      className={`px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-semibold text-xs transition-all flex items-center gap-1 sm:gap-1.5 shadow-xs cursor-pointer ${
                         isSent
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : isBirthday

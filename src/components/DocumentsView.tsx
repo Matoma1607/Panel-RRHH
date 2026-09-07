@@ -406,16 +406,16 @@ Descargado desde el Portal de RRHH Interno de la Empresa SOLMAR.
           return (
             <div
               key={doc.id}
-              className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative"
+              className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative"
             >
               <div>
                 {/* Header: Icon, Category Badge, Branch Pill & Admin Controls */}
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-10 sm:w-11 h-10 sm:h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                       {getFileIcon(doc.fileType)}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap mb-1">
                         <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#a6b2b1]/20 text-[#38484c] border border-[#a6b2b1]/50">
                           {doc.category}
@@ -467,16 +467,16 @@ Descargado desde el Portal de RRHH Interno de la Empresa SOLMAR.
               </div>
 
               {/* Footer Metadata & Action Buttons */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center gap-3 font-medium">
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-slate-400">
+                <div className="flex items-center gap-2 font-medium flex-wrap">
                   <span className="font-semibold text-slate-600">{doc.fileType}</span>
                   <span>•</span>
                   <span>{doc.fileSize}</span>
                   <span>•</span>
-                  <span>Act. {doc.updatedDate}</span>
+                  <span className="truncate">Act. {doc.updatedDate}</span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0 justify-end">
                   <button
                     onClick={() => handleTriggerShare(doc)}
                     title="Compartir ficha del documento"

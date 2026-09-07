@@ -55,7 +55,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden"
+        className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

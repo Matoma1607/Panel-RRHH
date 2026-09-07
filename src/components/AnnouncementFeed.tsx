@@ -356,7 +356,7 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
             <article
               id={`announcement-${item.id}`}
               key={item.id}
-              className={`bg-white rounded-3xl border transition-all duration-300 shadow-xs hover:shadow-md overflow-hidden relative ${
+              className={`bg-white rounded-2xl sm:rounded-3xl border transition-all duration-300 shadow-xs hover:shadow-md overflow-hidden relative ${
                 isHighlighted
                   ? 'border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl bg-emerald-50/10'
                   : item.pinned
@@ -366,7 +366,7 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
             >
               {/* Highlight Badge if opened from link */}
               {isHighlighted && (
-                <div className="bg-emerald-600 text-white text-xs px-4 py-1.5 font-bold flex items-center justify-between">
+                <div className="bg-emerald-600 text-white text-xs px-3 sm:px-4 py-1.5 font-bold flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <LinkIcon className="w-3.5 h-3.5" />
                     <span>Comunicado abierto mediante vínculo compartido</span>
@@ -380,7 +380,7 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                 <div className="w-full h-1 bg-[#38484c]" />
               )}
 
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
                 
                 {/* Header: Category Badge & Date / Pinned Label */}
                 <div className="flex items-start justify-between gap-3">
@@ -466,11 +466,11 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     {/* Like Button */}
                     <button
                       onClick={() => onLike(item.id)}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                         item.likedBySession
                           ? 'bg-rose-50 text-rose-600 font-bold border border-rose-200'
                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
@@ -490,7 +490,7 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                       onClick={() =>
                         setOpenCommentFor(openCommentFor === item.id ? null : item.id)
                       }
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 transition-all"
+                      className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 transition-all cursor-pointer"
                     >
                       <MessageSquare className="w-4 h-4 text-slate-400" />
                       <span>{item.comments.length}</span>
@@ -501,10 +501,10 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                     <button
                       onClick={() => handleTriggerShare(item)}
                       title="Compartir nota completa"
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 hover:border-teal-300 transition-all cursor-pointer shadow-2xs"
+                      className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 hover:border-teal-300 transition-all cursor-pointer shadow-2xs"
                     >
                       <Share2 className="w-4 h-4 text-teal-700" />
-                      <span>Compartir Nota</span>
+                      <span>Compartir<span className="hidden sm:inline"> Nota</span></span>
                     </button>
                   </div>
 

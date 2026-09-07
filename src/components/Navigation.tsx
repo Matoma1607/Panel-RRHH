@@ -125,7 +125,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-md border-t border-[#38484c]/12 px-2 py-1 shadow-lg">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-t border-[#38484c]/12 px-1 pt-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] shadow-lg">
         <nav className="flex items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -134,14 +134,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-semibold transition-colors ${
-                  isActive ? 'text-teal-800 font-bold' : 'text-slate-500 hover:text-slate-800'
+                className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-h-[44px] rounded-xl text-[10px] font-semibold transition-colors ${
+                  isActive ? 'text-teal-800 font-bold' : 'text-slate-500 hover:text-slate-800 active:text-teal-700'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-teal-800' : 'text-slate-400'}`} />
-                <span className="truncate max-w-[70px]">{item.label}</span>
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-teal-800' : 'text-slate-400'}`} />
+                <span className="truncate max-w-[72px] leading-tight">{item.label}</span>
                 {item.badge && (
-                  <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-rose-500" />
+                  <span className="absolute top-1 right-1/4 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
                 )}
               </button>
             );

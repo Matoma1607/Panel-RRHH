@@ -1,456 +1,614 @@
-import React, { useState } from 'react';
-import { CompanyInfo, Announcement, DocumentItem, CelebrationItem, BranchName } from '../types';
+import React, { useState, useEffect } from 'react';
+import { DocumentItem, UserRole, BranchName, ALL_BRANCHES } from '../types';
 import {
-  Newspaper,
   FileText,
-  Cake,
+  Search,
+  Download,
+  Eye,
   Plus,
-  ShieldCheck,
-  Check,
-  Edit2,
-  Edit3,
   Trash2,
-  MessageSquare,
-  Send,
-  Pin,
-  Building2
+  Edit3,
+  FileSpreadsheet,
+  FileCode,
+  ShieldAlert,
+  Sparkles,
+  CheckCircle2,
+  Filter,
+  Check,
+  Share2,
+  ExternalLink,
+  Paperclip,
+  Building2,
+  Globe,
+  Lock,
+  MapPin,
+  Info,
+  X
 } from 'lucide-react';
-import { BranchDirectLinksAdmin } from './BranchDirectLinksAdmin';
+import { ShareModal } from './modals/ShareModal';
 
-interface AdminDashboardProps {
-  companyInfo: CompanyInfo;
-  announcements: Announcement[];
+interface DocumentsViewProps {
   documents: DocumentItem[];
-  celebrations?: CelebrationItem[];
+  role: UserRole;
   canPublish?: boolean;
-  onUpdateCompanyInfo: (info: CompanyInfo) => void;
-  onNavigateTab: (tab: string) => void;
-  onNewAnnouncement: () => void;
-  onEditAnnouncement?: (announcement: Announcement) => void;
-  onDeleteAnnouncement?: (id: string) => void;
-  onAddComment?: (id: string, text: string) => void;
-  onNewDocument: () => void;
-  onNewCelebration?: () => void;
-  onNewDocumentForBranch?: (branch: BranchName) => void;
+  isAdminLoggedIn?: boolean;
+  userBranch?: BranchName;
+  setUserBranch?: (branch: BranchName) => void;
+  isDirectBranchLink?: boolean;
+  searchFilter?: string;
+  globalSearch?: string;
+  setGlobalSearch?: (s: string) => void;
+  highlightedId?: string | null;
+  onNewDocument?: () => void;
+  onOpenNewModal?: () => void;
+  onEditDocument: (document: DocumentItem) => void;
+  onDeleteDocument: (id: string) => void;
+  onDownloadIncrement?: (id: string) => void;
+  onDownload?: (id: string) => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  companyInfo,
-  announcements,
+const CATEGORIES = ['Todos', 'Reglamentos', 'Políticas', 'Formularios', 'Guías', 'Beneficios', 'Recibos'];
+
+export const DocumentsView: React.FC<DocumentsViewProps> = ({
   documents,
-  celebrations = [],
-  canPublish = true,
-  onUpdateCompanyInfo,
-  onNavigateTab,
-  onNewAnnouncement,
-  onEditAnnouncement,
-  onDeleteAnnouncement,
-  onAddComment,
+  role,
+  canPublish = role === 'admin',
+  isAdminLoggedIn = false,
+  userBranch: externalUserBranch,
+  setUserBranch: externalSetUserBranch,
+  isDirectBranchLink = false,
+  searchFilter,
+  globalSearch,
+  setGlobalSearch,
+  highlightedId,
   onNewDocument,
-  onNewCelebration,
+  onOpenNewModal,
+  onEditDocument,
+  onDeleteDocument,
+  onDownloadIncrement,
+  onDownload,
 }) => {
-  const [editingCompany, setEditingCompany] = useState(false);
-  const [formCompany, setFormCompany] = useState<CompanyInfo>(companyInfo);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
+  const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null);
+  const [sharingDocument, setSharingDocument] = useState<DocumentItem | null>(null);
 
-  // Admin comments state inside dashboard
-  const [openCommentsAnnId, setOpenCommentsAnnId] = useState<string | null>(null);
-  const [adminCommentInputs, setAdminCommentInputs] = useState<Record<string, string>>({});
-
-  const handleAdminCommentSubmit = (annId: string) => {
-    const text = adminCommentInputs[annId] || '';
-    if (text.trim() && onAddComment) {
-      onAddComment(annId, text.trim());
-      setAdminCommentInputs((prev) => ({ ...prev, [annId]: '' }));
+  // Branch filter state (persisted for employee)
+  const [localUserBranch, setLocalUserBranch] = useState<BranchName>(() => {
+    const saved = localStorage.getItem('solmar_user_branch') as BranchName;
+    if (saved && ALL_BRANCHES.includes(saved)) {
+      return saved;
     }
+    return 'Solmar Alem';
+  });
+
+  const userBranch = externalUserBranch || localUserBranch;
+
+  // Admin filter allows viewing "Todas" or specific branch
+  const [adminBranchFilter, setAdminBranchFilter] = useState<'Todas' | BranchName>('Todas');
+
+  const handleBranchChange = (branch: BranchName) => {
+    if (externalSetUserBranch) {
+      externalSetUserBranch(branch);
+    } else {
+      setLocalUserBranch(branch);
+    }
+    localStorage.setItem('solmar_user_branch', branch);
   };
 
-  const handleSaveCompany = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdateCompanyInfo(formCompany);
-    setEditingCompany(false);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  const handleNewDocumentFn = onNewDocument || onOpenNewModal || (() => {});
+  const handleDownloadIncrementFn = onDownloadIncrement || onDownload || (() => {});
+
+  useEffect(() => {
+    if (highlightedId) {
+      const match = documents.find((d) => d.id === highlightedId);
+      if (match) {
+        setPreviewDoc(match);
+      }
+    }
+  }, [highlightedId, documents]);
+
+  const handleTriggerShare = (doc: DocumentItem) => {
+    setSharingDocument(doc);
+  };
+
+  const effectiveFilter = (searchFilter || globalSearch || '').toLowerCase();
+
+  // Strict Branch Visibility Filtering
+  const filtered = documents.filter((doc) => {
+    // 1. Category check
+    const matchesCat = selectedCategory === 'Todos' || doc.category === selectedCategory;
+
+    // 2. Search check
+    const matchesSearch =
+      !effectiveFilter ||
+      (doc.title || '').toLowerCase().includes(effectiveFilter) ||
+      (doc.description || '').toLowerCase().includes(effectiveFilter) ||
+      (doc.category || '').toLowerCase().includes(effectiveFilter) ||
+      (doc.targetBranch || '').toLowerCase().includes(effectiveFilter);
+
+    // 3. Branch Visibility Check:
+    let matchesBranch = true;
+    if (isAdminLoggedIn) {
+      // If admin, check admin filter selection
+      if (adminBranchFilter !== 'Todas') {
+        matchesBranch = !doc.targetBranch || doc.targetBranch === 'Todas' || doc.targetBranch === adminBranchFilter;
+      }
+    } else {
+      // Strict rule for employees:
+      // Can ONLY see documents where targetBranch is 'Todas', undefined/empty, or matches their assigned branch!
+      matchesBranch = !doc.targetBranch || doc.targetBranch === 'Todas' || doc.targetBranch === userBranch;
+    }
+
+    return matchesCat && matchesSearch && matchesBranch;
+  });
+
+  const handleDownloadFile = (doc: DocumentItem) => {
+    handleDownloadIncrementFn(doc.id);
+
+    // If there is an actual uploaded Data URL or URL, download it directly
+    if (doc.fileData || doc.fileUrl) {
+      const link = document.createElement('a');
+      link.href = doc.fileData || doc.fileUrl!;
+      link.download = doc.fileName || doc.title;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Generate clean standard document fallback file
+      let mimeType = 'text/plain;charset=utf-8';
+      let extension = 'txt';
+      if (doc.fileType === 'PDF') {
+        mimeType = 'application/pdf';
+        extension = 'pdf';
+      } else if (doc.fileType === 'DOCX') {
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        extension = 'docx';
+      } else if (doc.fileType === 'XLSX') {
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        extension = 'xlsx';
+      }
+
+      const blobContent = `DOCUMENTO OFICIAL DE RRHH - ${doc.title}
+Empresa: SOLMAR
+Sucursal de Destino: ${doc.targetBranch || 'Todas las sucursales'}
+Categoría: ${doc.category}
+Fecha de última actualización: ${doc.updatedDate}
+Tipo de Formato: ${doc.fileType}
+
+DESCRIPCIÓN:
+${doc.description}
+
+CONTENIDO DEL DOCUMENTO:
+${doc.contentSnippet || 'Documento oficial verificado para consulta y descarga del personal.'}
+
+----------------------------------------------------
+Descargado desde el Portal de RRHH Interno de la Empresa SOLMAR.
+`;
+
+      const blob = new Blob([blobContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const cleanTitle = doc.title.toLowerCase().endsWith(`.${extension}`)
+        ? doc.title
+        : `${doc.title}.${extension}`;
+
+      link.download = cleanTitle;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    setDownloadSuccessToast(`Descargando ${doc.title}...`);
+    setTimeout(() => setDownloadSuccessToast(null), 3500);
+  };
+
+  const getFileIcon = (fileType: string) => {
+    switch (fileType) {
+      case 'XLSX':
+        return <FileSpreadsheet className="w-6 h-6 text-emerald-600" />;
+      case 'DOCX':
+        return <FileCode className="w-6 h-6 text-blue-600" />;
+      default:
+        return <FileText className="w-6 h-6 text-red-600" />;
+    }
   };
 
   return (
     <div className="space-y-6">
       
-      {/* Top Banner */}
-      <div className="bg-[#232f32] text-white rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
-        <div className="relative z-10 space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/20 text-emerald-300">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Panel de Control RRHH</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Gestión Interna de {companyInfo.name}
+      {/* Toast Notification */}
+      {downloadSuccessToast && (
+        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <span className="text-xs font-medium">{downloadSuccessToast}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <span>📄 Biblioteca de Documentos y Políticas</span>
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Administra comunicados y novedades, bibliotecas de documentos corporativos en PDF y festejos del equipo.
+          <p className="text-xs sm:text-sm text-slate-500">
+            Descargá y consultá reglamentos, formularios oficiales, políticas corporativas y guías en PDF o Word.
           </p>
         </div>
+
+        {canPublish && (
+          <button
+            onClick={handleNewDocumentFn}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Subir Documento</span>
+          </button>
+        )}
       </div>
 
-      {/* High Level Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div
-          onClick={() => onNavigateTab('feed')}
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:border-teal-700/40 cursor-pointer transition-all"
-        >
-          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center mb-3">
-            <Newspaper className="w-5 h-5" />
+      {/* Branch Selector Banner / Tooling */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 border border-teal-200">
+            <Building2 className="w-5 h-5" />
           </div>
-          <span className="text-2xl font-black text-slate-900">{announcements.length}</span>
-          <p className="text-xs text-slate-500 font-semibold mt-0.5">Comunicados Publicados</p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-900">
+                {isAdminLoggedIn ? 'Filtro de Sucursal (Vista Administrador)' : 'Mi Sucursal de Trabajo'}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100/70 text-teal-900 border border-teal-300">
+                Privacidad Activa
+              </span>
+              {isDirectBranchLink && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-700" />
+                  Acceso Directo
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              {isAdminLoggedIn 
+                ? 'Puedes filtrar la visualización para auditar qué ve cada sucursal o ver todo el repositorio.' 
+                : `Solo se muestran documentos oficiales asignados a ${userBranch} o públicos para toda la empresa.`}
+            </p>
+          </div>
         </div>
 
-        <div
-          onClick={() => onNavigateTab('documents')}
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:border-teal-700/40 cursor-pointer transition-all"
-        >
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">
-            <FileText className="w-5 h-5" />
-          </div>
-          <span className="text-2xl font-black text-slate-900">{documents.length}</span>
-          <p className="text-xs text-slate-500 font-semibold mt-0.5">Documentos Disponibles</p>
-        </div>
-
-        <div
-          onClick={() => onNavigateTab('celebrations')}
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:border-teal-700/40 cursor-pointer transition-all"
-        >
-          <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-700 flex items-center justify-center mb-3">
-            <Cake className="w-5 h-5" />
-          </div>
-          <span className="text-2xl font-black text-slate-900">{celebrations.length}</span>
-          <p className="text-xs text-slate-500 font-semibold mt-0.5">Festejos y Aniversarios</p>
-        </div>
-      </div>
-
-      {/* Action Shortcuts Grid */}
-      {canPublish && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs">
-          <h3 className="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
-            <span>⚡ Acciones Rápidas de Administración</span>
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              onClick={onNewAnnouncement}
-              className="p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 text-left transition-colors flex items-center gap-3 cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-teal-800 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
-                <Plus className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-slate-900 text-xs block">Publicar Comunicado</span>
-                <span className="text-[11px] text-slate-500">Nuevo aviso en cartelera</span>
-              </div>
-            </button>
-
-            <button
-              onClick={onNewDocument}
-              className="p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 text-left transition-colors flex items-center gap-3 cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
-                <Plus className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-slate-900 text-xs block">Subir Documento</span>
-                <span className="text-[11px] text-slate-500">Archivos PDF o manuales</span>
-              </div>
-            </button>
-
-            {onNewCelebration && (
-              <button
-                onClick={onNewCelebration}
-                className="p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 text-left transition-colors flex items-center gap-3 cursor-pointer group"
+        {/* Dropdown Selector / Lock indicator */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isAdminLoggedIn ? (
+            <>
+              <label className="text-xs font-bold text-slate-600 hidden sm:block whitespace-nowrap">
+                Filtrar vista por sucursal:
+              </label>
+              <select
+                value={adminBranchFilter}
+                onChange={(e) => setAdminBranchFilter(e.target.value as any)}
+                className="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-700 cursor-pointer shadow-2xs"
               >
-                <div className="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-bold text-slate-900 text-xs block">Agregar a Festejos</span>
-                  <span className="text-[11px] text-slate-500">Cumpleaños o aniversarios</span>
-                </div>
+                <option value="Todas">🌐 Todas las Sucursales (Ver Repositorio Completo)</option>
+                {ALL_BRANCHES.map((branch) => (
+                  <option key={branch} value={branch}>
+                    📍 {branch}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 px-3.5 py-2 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-950 shadow-2xs select-none">
+              <Lock className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+              <span>📍 {userBranch}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Category Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <Filter className="w-4 h-4 text-slate-400 shrink-0 ml-1 hidden sm:block" />
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+              selectedCategory === cat
+                ? 'bg-[#38484c] text-white border-[#38484c] shadow-xs'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Active Search Banner Indicator */}
+      {effectiveFilter && (
+        <div className="flex items-center justify-between p-3.5 bg-teal-50/80 border border-teal-200 rounded-2xl text-xs text-teal-950 font-medium animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-teal-700 shrink-0" />
+            <span>
+              Filtrando por: <strong>"{globalSearch || searchFilter}"</strong> ({filtered.length} {filtered.length === 1 ? 'documento encontrado' : 'documentos encontrados'})
+            </span>
+          </div>
+          {setGlobalSearch && (
+            <button
+              type="button"
+              onClick={() => setGlobalSearch('')}
+              className="flex items-center gap-1 font-bold text-teal-800 hover:text-teal-950 underline cursor-pointer ml-2 shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Limpiar búsqueda</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filtered.length === 0 && (
+        effectiveFilter ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base">
+              No se encontraron documentos para "{globalSearch || searchFilter}"
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Prueba con otro término o palabra clave, o limpia el buscador para ver todos los archivos.
+            </p>
+            {setGlobalSearch && (
+              <button
+                type="button"
+                onClick={() => setGlobalSearch('')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Ver todos los documentos</span>
               </button>
             )}
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base">
+              No se encontraron documentos para {isAdminLoggedIn && adminBranchFilter !== 'Todas' ? adminBranchFilter : userBranch}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              {canPublish 
+                ? 'Puedes subir un nuevo archivo en PDF, Word o Excel y asignar la visibilidad para esta sucursal o para todas.' 
+                : 'No hay documentos asignados a esta categoría o sucursal en este momento.'}
+            </p>
+            {canPublish && (
+              <button
+                onClick={handleNewDocumentFn}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38484c] hover:bg-[#2c393c] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Subir documento ahora</span>
+              </button>
+            )}
+          </div>
+        )
+      )}
+
+      {/* Documents Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {filtered.map((doc) => {
+          const isTargeted = doc.targetBranch && doc.targetBranch !== 'Todas';
+
+          return (
+            <div
+              key={doc.id}
+              className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between relative"
+            >
+              <div>
+                {/* Header: Icon, Category Badge, Branch Pill & Admin Controls */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-10 sm:w-11 h-10 sm:h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      {getFileIcon(doc.fileType)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#a6b2b1]/20 text-[#38484c] border border-[#a6b2b1]/50">
+                          {doc.category}
+                        </span>
+
+                        {isTargeted ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            <Lock className="w-2.5 h-2.5 text-amber-700" />
+                            <span>Solo {doc.targetBranch}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                            <Globe className="w-2.5 h-2.5 text-teal-700" />
+                            <span>Todas las sucursales</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="font-bold text-slate-900 text-sm leading-snug">
+                        {doc.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {canPublish && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => onEditDocument(doc)}
+                        className="p-1.5 text-slate-400 hover:text-[#38484c] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Editar documento"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteDocument(doc.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Eliminar documento"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 mb-4">
+                  {doc.description}
+                </p>
+              </div>
+
+              {/* Footer Metadata & Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-slate-400">
+                <div className="flex items-center gap-2 font-medium flex-wrap">
+                  <span className="font-semibold text-slate-600">{doc.fileType}</span>
+                  <span>•</span>
+                  <span>{doc.fileSize}</span>
+                  <span>•</span>
+                  <span className="truncate">Act. {doc.updatedDate}</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                  <button
+                    onClick={() => handleTriggerShare(doc)}
+                    title="Compartir ficha del documento"
+                    className="p-1.5 rounded-xl transition-all cursor-pointer border border-teal-200 text-teal-800 bg-teal-50 hover:bg-teal-100 hover:border-teal-300 shadow-2xs"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-teal-700" />
+                  </button>
+
+                  <button
+                    onClick={() => setPreviewDoc(doc)}
+                    className="px-3 py-1.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Ver</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadFile(doc)}
+                    className="px-3.5 py-1.5 text-white bg-[#38484c] hover:bg-[#2c393c] rounded-xl font-semibold text-xs transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Descargar</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Document Preview / Reading Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 p-4 sm:p-6 relative max-h-[92dvh] sm:max-h-[90vh] flex flex-col justify-between overflow-y-auto">
+            <button
+              onClick={() => setPreviewDoc(null)}
+              className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Cerrar modal"
+            >
+              ✕
+            </button>
+
+            <div>
+              <div className="flex items-start sm:items-center gap-3 mb-3 sm:mb-4 pr-8">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0">
+                  {getFileIcon(previewDoc.fileType)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold bg-[#a6b2b1]/20 text-[#38484c] px-2.5 py-0.5 rounded-full border border-[#a6b2b1]/50">
+                      {previewDoc.category}
+                    </span>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">
+                      Formato {previewDoc.fileType} ({previewDoc.fileSize})
+                    </span>
+                    {previewDoc.targetBranch && previewDoc.targetBranch !== 'Todas' ? (
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5 text-amber-700" />
+                        <span>Exclusivo: {previewDoc.targetBranch}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-teal-50 text-teal-800 px-2.5 py-0.5 rounded-full border border-teal-200 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5 text-teal-700" />
+                        <span>Visible para todas las sucursales</span>
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug mt-1">
+                    {previewDoc.title}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 mb-3 sm:mb-4 leading-relaxed">{previewDoc.description}</p>
+
+              {/* Document Interactive Viewer or Content Box */}
+              {previewDoc.fileData && previewDoc.fileType === 'PDF' ? (
+                <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 h-64 sm:h-96">
+                  <iframe
+                    src={previewDoc.fileData}
+                    title={previewDoc.title}
+                    className="w-full h-full border-0"
+                  />
+                </div>
+              ) : (
+                <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-800 space-y-2 max-h-56 sm:max-h-72 overflow-y-auto leading-relaxed">
+                  <div className="text-slate-400 font-sans font-bold text-[10px] sm:text-[11px] border-b border-slate-200 pb-1 mb-2 flex items-center justify-between">
+                    <span>VISTA PREVIA Y CONTENIDO DE LECTURA</span>
+                    <span className="text-[10px] text-slate-400">Actualizado: {previewDoc.updatedDate}</span>
+                  </div>
+                  <p className="whitespace-pre-line font-sans text-slate-700">
+                    {previewDoc.contentSnippet || previewDoc.description || 'Documento oficial verificado para consulta del personal.'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-[11px] sm:text-xs text-slate-400 text-center sm:text-left">
+                Descargado <strong className="text-slate-600">{previewDoc.downloadCount}</strong> veces por colaboradores
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-200 transition-colors cursor-pointer text-center"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    handleDownloadFile(previewDoc);
+                    setPreviewDoc(null);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#38484c] text-white font-semibold text-xs rounded-xl hover:bg-[#2c393c] flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Descargar Archivo ({previewDoc.fileType})</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Branch Access & WhatsApp Diffusion Section */}
-      <BranchDirectLinksAdmin
-        documents={documents}
-        announcements={announcements}
-        onNewDocumentForBranch={(branch) => {
-          onNewDocument();
-        }}
-        onNavigateTab={onNavigateTab}
+      {/* Professional Share Modal */}
+      <ShareModal
+        isOpen={!!sharingDocument}
+        onClose={() => setSharingDocument(null)}
+        item={sharingDocument}
+        type="document"
       />
-
-      {/* Announcements & Comments RRHH Management Section */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#232f32] text-white flex items-center justify-center font-bold">
-              <Newspaper className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">
-                📰 Gestión de Comunicados y Novedades
-              </h3>
-              <p className="text-xs text-slate-500">
-                Publica avisos oficiales y modera comentarios en tiempo real.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onNewAnnouncement}
-              className="px-4 py-2 bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Publicar Comunicado</span>
-            </button>
-          </div>
-        </div>
-
-        {announcements.length === 0 ? (
-          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
-            <Newspaper className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-xs font-semibold text-slate-700">No hay comunicados publicados aún.</p>
-            <button
-              onClick={onNewAnnouncement}
-              className="mt-3 px-3 py-1.5 bg-teal-800 text-white text-xs font-bold rounded-xl cursor-pointer"
-            >
-              Crear primer comunicado
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-            {announcements.map((ann) => {
-              const isCommentsOpen = openCommentsAnnId === ann.id;
-              const commentsList = ann.comments || [];
-
-              return (
-                <div
-                  key={ann.id}
-                  className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3 hover:border-slate-300 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200">
-                          {ann.category}
-                        </span>
-                        {ann.pinned && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-                            <Pin className="w-2.5 h-2.5 fill-amber-700 text-amber-700" />
-                            <span>FIJADO</span>
-                          </span>
-                        )}
-                        <span className="text-[11px] text-slate-400 font-medium">{ann.date}</span>
-                      </div>
-                      <h4 className="font-bold text-slate-900 text-sm">{ann.title}</h4>
-                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{ann.content}</p>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      {onEditAnnouncement && (
-                        <button
-                          onClick={() => onEditAnnouncement(ann)}
-                          title="Editar comunicado"
-                          className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {onDeleteAnnouncement && (
-                        <button
-                          onClick={() => onDeleteAnnouncement(ann.id)}
-                          title="Eliminar comunicado"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Comments Toggle & List */}
-                  <div className="pt-2 border-t border-slate-200/60 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => setOpenCommentsAnnId(isCommentsOpen ? null : ann.id)}
-                        className="text-xs font-semibold text-teal-800 hover:underline flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>
-                          {commentsList.length === 0
-                            ? '0 Comentarios — Responder como RRHH'
-                            : `${commentsList.length} Comentario${commentsList.length > 1 ? 's' : ''}`}
-                        </span>
-                      </button>
-                    </div>
-
-                    {isCommentsOpen && (
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-2.5">
-                        {commentsList.length > 0 && (
-                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                            {commentsList.map((c) => (
-                              <div key={c.id} className="p-2.5 bg-slate-50 rounded-lg text-xs border border-slate-100">
-                                <div className="flex items-center justify-between font-bold text-slate-800 mb-0.5">
-                                  <span>{c.authorName}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">{c.date}</span>
-                                </div>
-                                <p className="text-slate-600">{c.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Admin Add Comment Form */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <input
-                            type="text"
-                            placeholder="Escribe una respuesta oficial como RRHH..."
-                            value={adminCommentInputs[ann.id] || ''}
-                            onChange={(e) =>
-                              setAdminCommentInputs({ ...adminCommentInputs, [ann.id]: e.target.value })
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleAdminCommentSubmit(ann.id);
-                            }}
-                            className="flex-1 px-3 py-1.5 bg-slate-50 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-teal-700 text-slate-900"
-                          />
-                          <button
-                            onClick={() => handleAdminCommentSubmit(ann.id)}
-                            className="px-3 py-1.5 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors shrink-0 cursor-pointer"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Enviar</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Company Brand Settings Form */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <h3 className="font-bold text-slate-900 text-base">
-              🏢 Configuración Institucional de la Empresa
-            </h3>
-            <p className="text-xs text-slate-500">
-              Personaliza el nombre de tu empresa, eslogan y datos de contacto de RRHH.
-            </p>
-          </div>
-
-          {canPublish && (
-            <button
-              onClick={() => setEditingCompany(!editingCompany)}
-              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-            >
-              {editingCompany ? 'Cancelar' : 'Editar Datos'}
-            </button>
-          )}
-        </div>
-
-        {savedSuccess && (
-          <div className="p-3 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600" />
-            <span>Datos corporativos actualizados correctamente.</span>
-          </div>
-        )}
-
-        {editingCompany ? (
-          <form onSubmit={handleSaveCompany} className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre de la Empresa</label>
-                <input
-                  type="text"
-                  required
-                  value={formCompany.name}
-                  onChange={(e) => setFormCompany({ ...formCompany, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Eslogan Institucional</label>
-                <input
-                  type="text"
-                  required
-                  value={formCompany.slogan}
-                  onChange={(e) => setFormCompany({ ...formCompany, slogan: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Email de Contacto RRHH</label>
-                <input
-                  type="email"
-                  required
-                  value={formCompany.contactHrEmail}
-                  onChange={(e) => setFormCompany({ ...formCompany, contactHrEmail: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono / Conmutador RRHH</label>
-                <input
-                  type="text"
-                  required
-                  value={formCompany.contactHrPhone}
-                  onChange={(e) => setFormCompany({ ...formCompany, contactHrPhone: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs rounded-xl shadow-xs cursor-pointer"
-              >
-                Guardar Cambios
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-slate-400 font-medium block">Nombre Oficial</span>
-              <span className="font-bold text-slate-900">{companyInfo.name}</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-slate-400 font-medium block">Eslogan</span>
-              <span className="font-bold text-slate-900">{companyInfo.slogan}</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-slate-400 font-medium block">Email RRHH</span>
-              <span className="font-bold text-teal-800">{companyInfo.contactHrEmail}</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-slate-400 font-medium block">Teléfono Conmutador</span>
-              <span className="font-bold text-slate-900">{companyInfo.contactHrPhone}</span>
-            </div>
-          </div>
-        )}
-      </div>
 
     </div>
   );
