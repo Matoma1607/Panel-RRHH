@@ -4,6 +4,7 @@ import { useHRData } from './hooks/useHRData';
 // Layout & Views
 import { Navbar } from './components/Navbar';
 import { Navigation } from './components/Navigation';
+import { RightRail } from './components/RightRail';
 import { AnnouncementFeed } from './components/AnnouncementFeed';
 import { DocumentsView } from './components/DocumentsView';
 import { CelebrationsView } from './components/CelebrationsView';
@@ -252,20 +253,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative text-slate-800 font-sans antialiased pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:pb-8 w-full max-w-full overflow-x-hidden bg-[#e2eaeb]">
+    <div className="min-h-screen relative text-slate-800 font-sans antialiased pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:pb-8 w-full max-w-full overflow-x-hidden bg-[#eef1ee]">
       
-      {/* Ambient translucent brand background wash & soft glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        {/* Soft upper-right brand bloom */}
-        <div className="absolute -top-32 -right-32 w-[650px] h-[650px] rounded-full bg-[#38484c]/12 blur-3xl pointer-events-none" />
-        {/* Soft mid-left petrol bloom */}
-        <div className="absolute top-1/3 -left-32 w-[550px] h-[550px] rounded-full bg-[#5c6c6c]/10 blur-3xl pointer-events-none" />
-        {/* Soft bottom-center glow */}
-        <div className="absolute -bottom-24 right-1/4 w-[600px] h-[600px] rounded-full bg-[#38484c]/8 blur-3xl pointer-events-none" />
-        {/* Translucent vertical gradient mask */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-[#d8e3e5]/40 pointer-events-none" />
-      </div>
-
       <div className="relative z-10">
         {/* Top Main Bar */}
       <Navbar
@@ -294,20 +283,25 @@ export default function App() {
         celebrations={celebrations}
       />
 
-      {/* Main Container Layout */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row min-w-0">
+      {/* 3-Column Main Container Layout */}
+      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-4 flex gap-4 min-w-0">
         
-        {/* Navigation Sidebar */}
+        {/* 1. Sidebar Izquierdo (~220px) */}
         <Navigation
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           role={role}
           isAdminLoggedIn={isAdminLoggedIn}
           upcomingCelebrationsCount={celebrations.length}
+          newAnnouncementsCount={announcements.length}
+          updatedDocsCount={documents.length}
+          userName={userName}
+          userBranch={userBranch}
+          onOpenProfileModal={() => setIsProfileModalOpen(true)}
         />
 
-        {/* Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
+        {/* 2. Columna Central Principal */}
+        <main className="flex-1 min-w-0">
           
           {activeTab === 'feed' && (
             <AnnouncementFeed
@@ -391,6 +385,18 @@ export default function App() {
           )}
 
         </main>
+
+        {/* 3. Columna Derecha (Rail, ~280px) */}
+        <RightRail
+          celebrations={celebrations}
+          documents={documents}
+          announcements={announcements}
+          userBranch={userBranch}
+          onNavigateTab={setActiveTab}
+          onDownloadDocument={incrementDocumentDownload}
+          onSendGreeting={sendGreeting}
+          userName={userName}
+        />
       </div>
 
       {/* Auth Modal */}

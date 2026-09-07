@@ -1,6 +1,6 @@
 import React from 'react';
 import { BranchName, DocumentItem, Announcement } from '../types';
-import { Building2, FileText, CheckCircle2, Lock } from 'lucide-react';
+import { Building2, Lock, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface BranchBannerProps {
   userBranch: BranchName;
@@ -21,74 +21,50 @@ export const BranchBanner: React.FC<BranchBannerProps> = ({
   onNavigateTab,
   onOpenBranchPicker,
 }) => {
-  // Calculate exclusive items for this branch
-  const branchDocs = documents.filter((d) => d.targetBranch === userBranch);
-  const branchAnnouncements = announcements.filter((a) => a.targetBranch === userBranch);
-  const totalExclusive = branchDocs.length + branchAnnouncements.length;
-
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-[#232f32] via-[#2c393c] to-[#38484c] text-white p-5 sm:p-6 shadow-md border border-slate-700/50">
-      {/* Decorative background glow */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 rounded-full bg-teal-500/10 blur-2xl pointer-events-none" />
-      
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="bg-white rounded-lg border border-[#dbe2dc] px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-2xs">
+      {/* Left items in a single compact line */}
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-8 h-8 rounded-md bg-[#1c3d34]/10 text-[#1c3d34] flex items-center justify-center shrink-0">
+          <Building2 className="w-4 h-4" />
+        </div>
         
-        {/* Left info */}
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black uppercase tracking-wider text-teal-300">
-                {isAdminLoggedIn ? 'Modo Auditoría de Sucursal' : 'Sucursal Asignada'}
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30 flex items-center gap-1">
-                <Lock className="w-2.5 h-2.5" />
-                Dispositivo Vinculado
-              </span>
-              {isDirectLink && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-                  <CheckCircle2 className="w-2.5 h-2.5" />
-                  Acceso Directo Verificado
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2 mt-0.5">
-              <span>📍 {userBranch}</span>
-            </h2>
-            <p className="text-xs text-slate-300 mt-0.5 max-w-xl">
-              {totalExclusive > 0
-                ? `Tienes ${totalExclusive} ${totalExclusive === 1 ? 'publicación exclusiva' : 'publicaciones exclusivas'} (${branchDocs.length} ${branchDocs.length === 1 ? 'documento' : 'documentos'} y ${branchAnnouncements.length} ${branchAnnouncements.length === 1 ? 'comunicado' : 'comunicados'}) asignados a esta sede.`
-                : 'Mostrando comunicados institucionales y reglamentos oficiales de la empresa.'}
-            </p>
-          </div>
-        </div>
+        <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+          <span className="text-xs font-bold text-[#0f2620] flex items-center gap-1 shrink-0">
+            <span>📍</span>
+            <span>{userBranch}</span>
+          </span>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
-          {branchDocs.length > 0 && (
-            <button
-              onClick={() => onNavigateTab('documents')}
-              className="px-3.5 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-200 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Ver {branchDocs.length} Doc. de {userBranch.replace('Solmar ', '')}</span>
-            </button>
-          )}
+          <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-slate-300" />
 
-          {isAdminLoggedIn && onOpenBranchPicker && (
-            <button
-              onClick={onOpenBranchPicker}
-              className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer"
-              title="Cambiar sucursal en modo administrador"
-            >
-              Auditar otra sucursal
-            </button>
+          <p className="text-[11px] text-slate-500 truncate max-w-md hidden md:inline-block">
+            Mostrando comunicados institucionales y reglamentos oficiales de la sede.
+          </p>
+
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-[#eef1ee] text-[#1c3d34] border border-[#dbe2dc] shrink-0">
+            <Lock className="w-2.5 h-2.5" />
+            <span>Dispositivo vinculado</span>
+          </span>
+
+          {isDirectLink && (
+            <span className="hidden lg:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+              <CheckCircle2 className="w-2.5 h-2.5" />
+              <span>Acceso directo</span>
+            </span>
           )}
         </div>
-
       </div>
+
+      {/* Right button for Admin */}
+      {isAdminLoggedIn && onOpenBranchPicker && (
+        <button
+          type="button"
+          onClick={onOpenBranchPicker}
+          className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#eef1ee] hover:bg-[#dbe2dc] text-[#0f2620] border border-[#dbe2dc] transition-colors shrink-0 cursor-pointer"
+        >
+          Cambiar sede
+        </button>
+      )}
     </div>
   );
 };
