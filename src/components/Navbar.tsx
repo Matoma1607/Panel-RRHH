@@ -22,12 +22,9 @@ import {
   Cake,
   User,
   CheckCheck,
-  Trash2,
   ChevronRight,
-  ExternalLink,
-  Sparkles,
-  Info
 } from 'lucide-react';
+import { NotificationsPopover } from './NotificationsPopover';
 
 interface NavbarProps {
   companyInfo: CompanyInfo;
@@ -64,7 +61,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   role,
   isAdminLoggedIn,
   userBranch,
-  isDirectBranchLink = false,
   onOpenBranchPicker,
   userName,
   onOpenProfileModal,
@@ -85,9 +81,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   celebrations = [],
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const searchInputMobileRef = useRef<HTMLInputElement>(null);
 
   const query = (globalSearch || '').trim().toLowerCase();
 
@@ -140,20 +136,25 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const unreadCount = visibleNotifications.filter((n) => !n.read).length;
 
-  const filteredNotifications = useMemo(() => {
-    return notifFilter === 'unread'
-      ? visibleNotifications.filter((n) => !n.read)
-      : visibleNotifications;
-  }, [notifFilter, visibleNotifications]);
-
-  // Focus search input when toggled open
+  // Focus search input when toggled open on mobile
   useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+    if (isSearchOpenMobile && searchInputMobileRef.current) {
+      setTimeout(() => searchInputMobileRef.current?.focus(), 50);
     }
-  }, [isSearchOpen]);
+  }, [isSearchOpenMobile]);
 
-  // Prevent background scroll when hamburger menu is open
+  // Automatically close mobile menu if resized to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Prevent background scroll when mobile drawer is open
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -165,19 +166,20 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, [isMenuOpen]);
 
-  // Close on Escape key
+  // Close modals on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsMenuOpen(false);
-        setIsSearchOpen(false);
+        setIsSearchOpenMobile(false);
+        setIsNotificationsOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleNotificationClick = (notif: AppNotification) => {
+  const handleNotificationClickFromDrawer = (notif: AppNotification) => {
     if (!notif.read) {
       onMarkNotificationAsRead(notif.id);
     }
@@ -194,36 +196,36 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#38484c]/12 w-full shadow-2xs transition-colors">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#38484c]/12 w-full shadow-2xs transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Main Top Bar */}
           <div className="flex items-center justify-between h-16 relative">
             
-            {/* Left: Quick Search Button */}
-            <div className="flex items-center gap-2">
+            {/* ============================================================ */}
+            {/* 1. MODO CELULAR (< md)                                      */}
+            {/* ============================================================ */}
+            
+            {/* Mobile Left: Botón de Búsqueda rápida */}
+            <div className="flex md:hidden items-center">
               <button
                 type="button"
-                onClick={() => setIsSearchOpen((prev) => !prev)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
-                  isSearchOpen || globalSearch
+                onClick={() => setIsSearchOpenMobile((prev) => !prev)}
+                className={`p-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                  isSearchOpenMobile || globalSearch
                     ? 'bg-teal-800 text-white border-teal-800 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border-slate-200/80'
                 }`}
-                title="Buscar comunicados, personas o documentos"
+                title="Buscar comunicados o documentos"
                 aria-label="Abrir buscador"
               >
                 <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  {globalSearch ? 'Búsqueda activa' : 'Buscar'}
-                </span>
-                {globalSearch && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                )}
               </button>
             </div>
 
-            {/* Center: "SOLMAR" Logo (Alone in the middle, mathematically centered) */}
+            {/* Mobile Center: SOLMAR centrado en el medio */}
             <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center cursor-pointer select-none group"
+              className="flex md:hidden flex-col items-center justify-center cursor-pointer select-none"
               onClick={() => {
                 setActiveTab('feed');
                 if (role === 'admin' && !isAdminLoggedIn) {
@@ -232,58 +234,216 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               title="Ir al inicio de SOLMAR"
             >
-              <span className="font-black text-2xl sm:text-3xl tracking-widest text-[#232f32] uppercase group-hover:text-teal-800 transition-colors leading-none">
+              <span className="font-black text-2xl tracking-widest text-[#232f32] uppercase leading-none">
                 {companyInfo.name || 'SOLMAR'}
               </span>
-              <span className="text-[9px] sm:text-[10px] font-extrabold tracking-widest text-teal-700/90 uppercase mt-0.5">
+              <span className="text-[9px] font-extrabold tracking-widest text-teal-700/90 uppercase mt-0.5">
                 PORTAL INTERNO
               </span>
             </div>
 
-            {/* Right: Hamburger Menu Button with Badges */}
-            <div className="flex items-center gap-2">
+            {/* Mobile Right: Menú Hamburguesa con badge de notificaciones */}
+            <div className="flex md:hidden items-center">
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className={`relative flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  isMenuOpen
-                    ? 'bg-[#232f32] text-white border-[#232f32] shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200/90 text-slate-800 border-slate-200/90 shadow-2xs'
-                }`}
-                title="Abrir menú de usuario, sucursal y opciones"
+                className="relative p-2 rounded-xl border bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 shadow-2xs cursor-pointer"
+                title="Abrir menú"
                 aria-label="Menú principal"
               >
-                {/* Visual indicator for Admin status */}
                 {isAdminLoggedIn && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white hidden xs:inline-block" title="Modo RRHH Activo" />
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Modo RRHH Activo" />
                 )}
-                
-                <Menu className="w-4 h-4 text-slate-800" />
-                <span className="hidden sm:inline">Menú</span>
-
-                {/* Unread Notifications Badge */}
+                <Menu className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs animate-pulse ring-2 ring-white">
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse ring-2 ring-white">
                     {unreadCount}
                   </span>
                 )}
               </button>
             </div>
 
+
+            {/* ============================================================ */}
+            {/* 2. MODO COMPUTADORA / ESCRITORIO (>= md)                    */}
+            {/* ============================================================ */}
+            
+            {/* Desktop Left: Logo SOLMAR + Buscador Integrado */}
+            <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-1 min-w-0 mr-4">
+              {/* Logo */}
+              <div
+                className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0"
+                onClick={() => {
+                  setActiveTab('feed');
+                  if (role === 'admin' && !isAdminLoggedIn) {
+                    onRoleToggle('employee');
+                  }
+                }}
+                title="Ir al inicio de SOLMAR"
+              >
+                <span className="font-black text-2xl tracking-wider text-[#232f32] group-hover:text-teal-800 transition-colors uppercase leading-none">
+                  {companyInfo.name || 'SOLMAR'}
+                </span>
+                <span className="text-[10px] font-extrabold tracking-wider text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/70 uppercase">
+                  PORTAL INTERNO
+                </span>
+              </div>
+
+              {/* Input Buscador Directo */}
+              <div className="relative w-full max-w-xs lg:max-w-sm">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  placeholder="Buscar avisos, documentos o festejos..."
+                  className="w-full pl-9 pr-8 py-2 bg-slate-100 hover:bg-slate-200/60 focus:bg-white text-xs rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-2xs"
+                />
+                {globalSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setGlobalSearch('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 cursor-pointer"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop Right: Sucursal Asignada + Mi Nombre + Notificaciones + Ingreso/Modo RRHH */}
+            <div className="hidden md:flex items-center gap-2.5 shrink-0">
+              
+              {/* Sucursal Asignada */}
+              <div
+                onClick={isAdminLoggedIn ? onOpenBranchPicker : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+                  isAdminLoggedIn
+                    ? 'bg-teal-50 hover:bg-teal-100/90 border-teal-200 text-teal-900 cursor-pointer transition-colors shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 select-none'
+                }`}
+                title={isAdminLoggedIn ? 'Cambiar sucursal (Auditoría)' : 'Sucursal asignada a este puesto'}
+              >
+                <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                <span className="max-w-[130px] lg:max-w-[170px] truncate font-bold">
+                  {userBranch || 'Solmar Casa Central'}
+                </span>
+                {isAdminLoggedIn ? (
+                  <span className="text-[9px] uppercase font-extrabold text-teal-700 bg-teal-100/80 px-1.5 py-0.5 rounded ml-0.5">
+                    Editar
+                  </span>
+                ) : (
+                  <Lock className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
+                )}
+              </div>
+
+              {/* Mi Nombre (Ficha Colaborador) */}
+              <button
+                type="button"
+                onClick={onOpenProfileModal}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-800 transition-colors shadow-2xs cursor-pointer"
+                title="Ver o modificar mi nombre de colaborador"
+              >
+                <div className="w-5 h-5 rounded-full bg-teal-700 text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                  {userName ? userName.trim().charAt(0).toUpperCase() : <User className="w-3 h-3 text-teal-200" />}
+                </div>
+                <span className="max-w-[110px] truncate">
+                  {userName || '+ Mi Nombre'}
+                </span>
+              </button>
+
+              {/* Campana de Notificaciones con Popover */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                  className={`relative p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    isNotificationsOpen
+                      ? 'bg-[#232f32] text-white border-[#232f32] shadow-2xs'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 shadow-2xs'
+                  }`}
+                  title="Notificaciones y avisos"
+                  aria-label="Notificaciones"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse ring-2 ring-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationsPopover
+                  notifications={notifications}
+                  isOpen={isNotificationsOpen}
+                  onClose={() => setIsNotificationsOpen(false)}
+                  onMarkAsRead={onMarkNotificationAsRead}
+                  onClearAll={onClearNotifications}
+                  onDeleteNotification={onDeleteNotification}
+                  onDeleteAll={onDeleteAllNotifications}
+                  onNavigateTab={(tab) => {
+                    setActiveTab(tab);
+                    setIsNotificationsOpen(false);
+                  }}
+                  userBranch={userBranch}
+                  isAdminLoggedIn={isAdminLoggedIn}
+                />
+              </div>
+
+              {/* Botón de Modo RRHH / Ingreso RRHH */}
+              {isAdminLoggedIn ? (
+                <div className="flex items-center gap-1.5 pl-1 border-l border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('admin')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-2xs cursor-pointer ${
+                      activeTab === 'admin'
+                        ? 'bg-emerald-700 text-white border-emerald-800'
+                        : 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100'
+                    }`}
+                    title="Ir al panel de administración de RRHH"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Modo RRHH</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer"
+                    title="Cerrar sesión de Administrador"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#232f32] hover:bg-slate-800 text-white shadow-2xs transition-all cursor-pointer"
+                  title="Ingreso para administradores de Recursos Humanos"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Ingreso RRHH</span>
+                </button>
+              )}
+
+            </div>
+
           </div>
 
-          {/* Quick Expandable Search Dropdown */}
-          {isSearchOpen && (
-            <div className="py-3 border-t border-slate-200/80 animate-in slide-in-from-top-2 duration-150">
+          {/* Menú de Búsqueda Desplegable (Solo Mobile cuando se presiona la lupa) */}
+          {isSearchOpenMobile && (
+            <div className="py-3 border-t border-slate-200/80 animate-in slide-in-from-top-2 duration-150 md:hidden">
               <div className="relative w-full max-w-xl mx-auto">
                 <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
                 <input
-                  ref={searchInputRef}
+                  ref={searchInputMobileRef}
                   type="text"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
                   placeholder="Buscar avisos, compañeros o documentos..."
-                  className="w-full pl-9 pr-8 py-2.5 bg-slate-100 focus:bg-white text-xs sm:text-sm rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-inner"
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-100 focus:bg-white text-xs rounded-xl border border-transparent focus:border-teal-700 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-inner"
                 />
                 {globalSearch && (
                   <button
@@ -303,7 +463,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="button"
                     onClick={() => {
                       setActiveTab('feed');
-                      setIsSearchOpen(false);
+                      setIsSearchOpenMobile(false);
                     }}
                     className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                       activeTab === 'feed'
@@ -319,7 +479,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="button"
                     onClick={() => {
                       setActiveTab('documents');
-                      setIsSearchOpen(false);
+                      setIsSearchOpenMobile(false);
                     }}
                     className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                       activeTab === 'documents'
@@ -335,7 +495,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="button"
                     onClick={() => {
                       setActiveTab('celebrations');
-                      setIsSearchOpen(false);
+                      setIsSearchOpenMobile(false);
                     }}
                     className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                       activeTab === 'celebrations'
@@ -354,9 +514,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* Slide-over Hamburger Drawer & Backdrop */}
+      {/* Panel Desplegable Lateral (Drawer) - EXCLUSIVO PARA DISPOSITIVOS MÓVILES (md:hidden) */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200 md:hidden">
           
           {/* Backdrop */}
           <div
@@ -367,7 +527,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Drawer Container */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-sm sm:max-w-md bg-white shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-250">
+            <div className="w-screen max-w-sm bg-white shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-250">
               
               {/* Drawer Header */}
               <div className="px-5 py-4 border-b border-slate-100 bg-[#232f32] text-white flex items-center justify-between">
@@ -396,27 +556,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               {/* Drawer Scrollable Body */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-slate-800">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-slate-800">
                 
-                {/* 1. SECCIÓN: MI NOMBRE (Identificación de Colaborador) */}
+                {/* 1. SECCIÓN: MI NOMBRE */}
                 <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 relative overflow-hidden">
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white font-black text-lg flex items-center justify-center shrink-0 shadow-xs">
                       {userName ? userName.trim().charAt(0).toUpperCase() : <User className="w-6 h-6 text-teal-200" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-md">
-                          Mi Identidad
-                        </span>
-                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-md">
+                        Mi Identidad
+                      </span>
                       <h3 className="font-black text-slate-900 text-base truncate mt-1">
                         {userName || 'Sin identificar'}
                       </h3>
                       <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
                         {userName
-                          ? 'Tu nombre aparecerá al enviar felicitaciones y comentar notas.'
-                          : 'Agrega tu nombre para identificarte en comentarios y saludos de cumpleaños.'}
+                          ? 'Tu nombre aparecerá al comentar notas y felicitar compañeros.'
+                          : 'Configura tu nombre para comentarios y saludos de cumpleaños.'}
                       </p>
                     </div>
                   </div>
@@ -428,7 +586,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         setIsMenuOpen(false);
                         onOpenProfileModal?.();
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#38484c] hover:bg-[#2c393c] text-white shadow-xs transition-all cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#38484c] hover:bg-[#2c393c] text-white shadow-xs transition-all cursor-pointer"
                     >
                       <User className="w-3.5 h-3.5 text-teal-300" />
                       <span>{userName ? 'Modificar mi nombre' : '+ Agregar mi nombre'}</span>
@@ -473,7 +631,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ) : (
                       <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-medium">
                         <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>Bloqueada para este puesto de trabajo</span>
+                        <span>Bloqueada para este dispositivo</span>
                       </div>
                     )}
                   </div>
@@ -489,7 +647,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div>
                         <h4 className="font-bold text-slate-900 text-sm">Notificaciones</h4>
                         <span className="text-[11px] text-slate-500">
-                          {unreadCount > 0 ? `${unreadCount} pendientes de lectura` : 'Al día, sin pendientes'}
+                          {unreadCount > 0 ? `${unreadCount} pendientes` : 'Al día, sin pendientes'}
                         </span>
                       </div>
                     </div>
@@ -507,17 +665,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
 
                   {/* Notifications list preview */}
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {visibleNotifications.length === 0 ? (
-                      <div className="py-6 text-center text-slate-400 text-xs">
+                      <div className="py-5 text-center text-slate-400 text-xs">
                         <CheckCheck className="w-6 h-6 mx-auto mb-1 text-slate-300" />
-                        <span>No hay notificaciones registradas</span>
+                        <span>No hay notificaciones</span>
                       </div>
                     ) : (
-                      visibleNotifications.slice(0, 5).map((notif) => (
+                      visibleNotifications.slice(0, 4).map((notif) => (
                         <div
                           key={notif.id}
-                          onClick={() => handleNotificationClick(notif)}
+                          onClick={() => handleNotificationClickFromDrawer(notif)}
                           className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
                             !notif.read
                               ? 'bg-rose-50/40 border-rose-200/80 hover:bg-rose-50'
@@ -541,15 +699,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ))
                     )}
                   </div>
-
-                  {visibleNotifications.length > 5 && (
-                    <p className="text-center text-[10px] text-slate-400 font-medium">
-                      Mostrando las 5 alertas más recientes
-                    </p>
-                  )}
                 </div>
 
-                {/* 4. SECCIÓN: MODO ADMIN (RRHH) */}
+                {/* 4. SECCIÓN: MODO RRHH */}
                 <div className={`rounded-2xl border p-4 shadow-2xs ${
                   isAdminLoggedIn
                     ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
@@ -572,8 +724,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                         {isAdminLoggedIn
-                          ? 'Tienes permisos para publicar comunicados, subir documentos y gestionar festejos.'
-                          : 'Acceso exclusivo con contraseña para administradores de Recursos Humanos.'}
+                          ? 'Acceso concedido para crear comunicados, documentos y festejos.'
+                          : 'Acceso exclusivo con contraseña para el equipo de Recursos Humanos.'}
                       </p>
                     </div>
                   </div>
