@@ -386,7 +386,7 @@ export default function App() {
               onAddComment={handleAddComment}
               onNewDocument={() => handleOpenNewDocument()}
               onNewCelebration={handleOpenNewCelebration}
-              onNewDocumentForBranch={(branch) => handleOpenNewDocument(branch)}
+              onNewDocumentForBranch={handleOpenNewDocument}
             />
           )}
 
