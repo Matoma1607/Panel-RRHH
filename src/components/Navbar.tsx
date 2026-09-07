@@ -295,28 +295,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </p>
                     </div>
                   </div>
-                  <div className="mt-2.5 pt-2 border-t border-[#dbe2dc] flex items-center justify-between gap-2">
-                    {onOpenBranchPicker && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          onOpenBranchPicker();
-                        }}
-                        className="text-[11px] font-bold text-[#1c3d34] hover:text-[#0f2620] flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded border border-[#dbe2dc] hover:bg-[#dbe2dc]/60 transition-colors shadow-2xs"
-                        title="Corregir o cambiar la sede de este dispositivo"
-                      >
-                        <Building2 className="w-3 h-3 text-[#1c3d34]" />
-                        <span>Cambiar sede</span>
-                      </button>
-                    )}
+                  <div className="mt-2.5 pt-2 border-t border-[#dbe2dc] flex justify-end">
                     <button
                       type="button"
                       onClick={() => {
                         setIsMenuOpen(false);
                         onOpenProfileModal?.();
                       }}
-                      className="text-xs font-bold text-[#1c3d34] hover:underline cursor-pointer ml-auto"
+                      className="text-xs font-bold text-[#1c3d34] hover:underline cursor-pointer"
                     >
                       {userName ? 'Cambiar mi nombre' : '+ Configurar mi nombre'}
                     </button>

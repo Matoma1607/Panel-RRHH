@@ -263,7 +263,7 @@ export default function App() {
         isAdminLoggedIn={isAdminLoggedIn}
         userBranch={userBranch}
         isDirectBranchLink={isDirectBranchLink}
-        onOpenBranchPicker={() => setIsBranchPickerOpen(true)}
+        onOpenBranchPicker={isAdminLoggedIn ? () => setIsBranchPickerOpen(true) : undefined}
         userName={userName}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
         notifications={notifications}
