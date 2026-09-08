@@ -251,11 +251,11 @@ export const RightRail: React.FC<RightRailProps> = ({
           <div className="min-w-0">
             <p className="text-[10px] text-slate-400">Contacto directo</p>
             <p className="text-[11px] font-bold text-white truncate">
-              cbitarsolmar@solmar.com.ar
+              cbitar@solmar.com.ar
             </p>
           </div>
           <a
-            href="mailto:cbitarsolmar@solmar.com.ar?subject=Consulta%20Portal%20SOLMAR"
+            href="mailto:cbitar@solmar.com.ar?subject=Consulta%20Portal%20SOLMAR"
             className="px-2.5 py-1.5 rounded-md bg-[#1c3d34] hover:bg-[#a98a3f] text-white text-[10px] font-bold transition-colors shrink-0 shadow-2xs"
           >
             Escribir
