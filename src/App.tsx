@@ -17,6 +17,8 @@ import { DocumentEditorModal } from './components/modals/DocumentEditorModal';
 import { CelebrationEditorModal } from './components/modals/CelebrationEditorModal';
 import { BranchSelectorModal } from './components/modals/BranchSelectorModal';
 import { UserProfileModal } from './components/modals/UserProfileModal';
+import { PushNotificationBanner } from './components/PushNotificationBanner';
+import { registerServiceWorker } from './services/pushNotificationService';
 
 // Types
 import { Announcement, DocumentItem, CelebrationItem, BranchName, ALL_BRANCHES, parseBranchFromQuery } from './types';
@@ -151,6 +153,9 @@ export default function App() {
         setHighlightedItemId(hash.replace('#document-', ''));
       }
     }
+
+    // Register Service Worker silently in background
+    registerServiceWorker();
 
     // Global drag-and-drop prevention
     const preventDrag = (e: DragEvent) => {
@@ -446,6 +451,12 @@ export default function App() {
         currentName={userName}
         userBranch={userBranch}
         onSaveName={handleSaveUserName}
+      />
+
+      {/* Floating Push Notification Banner for Mobile & Desktop */}
+      <PushNotificationBanner
+        userBranch={userBranch}
+        userName={userName}
       />
 
       </div>

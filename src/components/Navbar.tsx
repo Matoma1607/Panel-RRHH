@@ -24,7 +24,14 @@ import {
   CheckCheck,
   Building2,
   ChevronRight,
+  BellRing,
+  Smartphone,
 } from 'lucide-react';
+import {
+  isPushNotificationSupported,
+  getNotificationPermission,
+  subscribeToPushNotifications
+} from '../services/pushNotificationService';
 
 interface NavbarProps {
   companyInfo: CompanyInfo;
@@ -79,6 +86,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const [pushStatus, setPushStatus] = useState<NotificationPermission | 'unsupported'>(() =>
+    getNotificationPermission()
+  );
+  const [isActivatingPush, setIsActivatingPush] = useState(false);
+
+  const handleTogglePushInMenu = async () => {
+    if (!userBranch) return;
+    setIsActivatingPush(true);
+    try {
+      const res = await subscribeToPushNotifications(userBranch, userName);
+      setPushStatus(res.status);
+    } finally {
+      setIsActivatingPush(false);
+    }
+  };
 
   // Notifications scoped to active branch
   const visibleNotifications = useMemo(() => {
@@ -353,6 +375,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ))
                     )}
                   </div>
+
+                  {/* Acceso directo a activar notificaciones al celular */}
+                  {pushStatus !== 'unsupported' && (
+                    <div className="pt-2 border-t border-[#dbe2dc]/70">
+                      {pushStatus === 'granted' ? (
+                        <div className="flex items-center justify-between px-2 py-1.5 bg-emerald-50 text-emerald-800 rounded text-[11px] font-semibold border border-emerald-200">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Avisos al celular activos
+                          </span>
+                          <span className="text-[10px] text-emerald-600 font-bold">✓ OK</span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleTogglePushInMenu}
+                          disabled={isActivatingPush}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 bg-[#eef1ee] hover:bg-[#dbe2dc] text-[#0f2620] text-[11px] font-bold rounded transition-colors cursor-pointer border border-[#dbe2dc]"
+                        >
+                          <BellRing className="w-3.5 h-3.5 text-[#c5622f]" />
+                          <span>{isActivatingPush ? 'Activando...' : 'Activar avisos en mi celular'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Acceso RRHH */}

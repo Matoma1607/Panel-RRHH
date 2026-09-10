@@ -196,3 +196,14 @@ export interface CompanyInfo {
   contactHrPhone: string;
   portalUrl: string;
 }
+
+export interface PushSubscriptionRecord {
+  id: string;
+  token?: string;
+  branch: BranchName | 'Todas';
+  userName?: string;
+  userAgent?: string;
+  subscribedAt: string;
+  lastActive: string;
+  enabled: boolean;
+}

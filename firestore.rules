@@ -36,6 +36,12 @@ service cloud.firestore {
       allow write: if isValidId(notificationId);
     }
 
+    // Push Subscriptions (for mobile and desktop browser notifications)
+    match /push_subscriptions/{subscriptionId} {
+      allow read: if true;
+      allow write: if isValidId(subscriptionId);
+    }
+
     // Company Settings
     match /company/{configId} {
       allow read: if true;

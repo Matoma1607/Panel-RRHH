@@ -25,6 +25,8 @@ import {
 } from '../services/firestoreService';
 import { testFirestoreConnection } from '../firebase';
 import { detectGenderFromName, getSmartAvatarUrl } from '../utils/avatarUtils';
+import { triggerLocalPushNotification } from '../services/pushNotificationService';
+import { getCelebrationCountdown } from '../utils/celebrationUtils';
 
 const STORAGE_KEYS = {
   ROLE: 'rrhh_user_role_v3',
@@ -67,7 +69,40 @@ export function useHRData() {
 
     const unsubCelebrations = subscribeCollection<CelebrationItem>(
       'celebrations',
-      (items) => setCelebrations(items),
+      (items) => {
+        setCelebrations(items);
+
+        // Daily Birthday Notification Check (triggers once per day per device)
+        try {
+          const todayDateStr = new Date().toISOString().split('T')[0];
+          const lastCheckedDay = localStorage.getItem('solmar_last_birthday_check_day');
+
+          if (lastCheckedDay !== todayDateStr) {
+            const birthdaysToday = items.filter((c) => {
+              const countdown = getCelebrationCountdown(c.date);
+              return countdown?.isToday;
+            });
+
+            if (birthdaysToday.length > 0) {
+              localStorage.setItem('solmar_last_birthday_check_day', todayDateStr);
+              const names = birthdaysToday.map((c) => c.employeeName).join(', ');
+              const title = birthdaysToday.length === 1
+                ? `🎂 ¡Hoy es el cumpleaños de ${names}!`
+                : `🎂 ¡Cumpleaños de hoy: ${names}!`;
+              const body = `¡Celebramos en SOLMAR! Entrá al portal a dejarle tu saludo al equipo.`;
+
+              triggerLocalPushNotification({
+                title,
+                body,
+                url: '/?tab=celebrations',
+                tag: `today-birthdays-${todayDateStr}`
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Birthday daily check error:', e);
+        }
+      },
       INITIAL_CELEBRATIONS
     );
 
@@ -248,6 +283,14 @@ export function useHRData() {
       };
       setNotifications((prev) => [notif, ...prev]);
       saveDocToFirestore('notifications', notif.id, notif);
+
+      // Web push to user device
+      triggerLocalPushNotification({
+        title: notif.title,
+        body: notif.message,
+        url: `/?announcement=${newAnn.id}`,
+        tag: `ann-${newAnn.id}`
+      });
     }
   };
 
@@ -409,6 +452,14 @@ export function useHRData() {
       };
       setNotifications((prev) => [notif, ...prev]);
       saveDocToFirestore('notifications', notif.id, notif);
+
+      // Web push to user device
+      triggerLocalPushNotification({
+        title: `🎂 ¡Cumpleaños de ${newCel.employeeName}!`,
+        body: `¡Hoy celebramos en SOLMAR! Entrá al portal a dejarle tu saludo.`,
+        url: '/?tab=celebrations',
+        tag: `cel-${newCel.id}`
+      });
     }
   };
 
