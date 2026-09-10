@@ -145,18 +145,21 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
     return matchesCategory && matchesSearch;
   });
 
-  // Separate: First pinned (or first item) as primary card, and the rest as compact cards
+  // Separate: If highlightedId matches an item, make that the primary card;
+  // otherwise, the first pinned announcement; or if none pinned, the newest announcement (first item in filtered)
+  const highlightedItem = highlightedId ? filtered.find((item) => item.id === highlightedId) : null;
   const pinnedAnnouncements = filtered.filter((item) => item.pinned);
   const unpinnedAnnouncements = filtered.filter((item) => !item.pinned);
 
-  // The primary card will be the first pinned announcement, or the first unpinned if none are pinned
-  const primaryAnnouncement = pinnedAnnouncements.length > 0
-    ? pinnedAnnouncements[0]
-    : (unpinnedAnnouncements.length > 0 ? unpinnedAnnouncements[0] : null);
+  const primaryAnnouncement = highlightedItem
+    ? highlightedItem
+    : (pinnedAnnouncements.length > 0
+        ? pinnedAnnouncements[0]
+        : (filtered.length > 0 ? filtered[0] : null));
 
   // The rest will be rendered as compact cards
   const compactAnnouncements = primaryAnnouncement
-    ? [...pinnedAnnouncements.slice(1), ...unpinnedAnnouncements].filter((item) => item.id !== primaryAnnouncement.id)
+    ? filtered.filter((item) => item.id !== primaryAnnouncement.id)
     : [];
 
   const handleCommentSubmit = (id: string) => {
@@ -494,11 +497,11 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
 
                   {/* Imagen opcional si existe */}
                   {item.imageUrl && (
-                    <div className="rounded-md overflow-hidden border border-[#dbe2dc] max-h-72 bg-slate-100 mt-2">
+                    <div className="rounded-md overflow-hidden border border-[#dbe2dc] bg-slate-50 mt-2 max-h-96 flex items-center justify-center">
                       <img
                         src={item.imageUrl}
                         alt={item.title}
-                        className="w-full h-full object-cover max-h-72"
+                        className="w-full max-h-96 object-contain rounded-md"
                         loading="lazy"
                       />
                     </div>
@@ -645,11 +648,26 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                     {/* Fila en una sola línea horizontal */}
                     <div className="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-[#eef1ee]/40 transition-colors">
                       
-                      {/* Left: Ícono + Título + Metadatos */}
+                      {/* Left: Ícono o Miniatura + Título + Metadatos */}
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className={`w-7 h-7 rounded-md ${theme.bgIcon} ${theme.iconColor} flex items-center justify-center shrink-0`}>
-                          <IconComponent className="w-3.5 h-3.5" />
-                        </div>
+                        {item.imageUrl ? (
+                          <div
+                            onClick={() => setExpandedCompactId(isExpanded ? null : item.id)}
+                            className="w-9 h-9 rounded-md overflow-hidden border border-[#dbe2dc] shrink-0 bg-slate-100 cursor-pointer shadow-2xs"
+                            title="Ver imagen adjunta"
+                          >
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className={`w-7 h-7 rounded-md ${theme.bgIcon} ${theme.iconColor} flex items-center justify-center shrink-0`}>
+                            <IconComponent className="w-3.5 h-3.5" />
+                          </div>
+                        )}
 
                         <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap sm:flex-nowrap">
                           <p
@@ -725,6 +743,18 @@ export const AnnouncementFeed: React.FC<AnnouncementFeedProps> = ({
                         <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                           {item.content}
                         </p>
+
+                        {/* Imagen adjunta en comunicado compacto expandido */}
+                        {item.imageUrl && (
+                          <div className="rounded-md overflow-hidden border border-[#dbe2dc] max-h-80 bg-slate-100 my-2">
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="w-full h-full object-contain max-h-80 bg-slate-50"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between pt-2 border-t border-[#dbe2dc] text-[11px]">
                           <span className="text-slate-500">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Announcement,
   DocumentItem,
@@ -49,6 +49,10 @@ export function useHRData() {
   const [celebrations, setCelebrations] = useState<CelebrationItem[]>(INITIAL_CELEBRATIONS);
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
 
+  // Track whether initial announcements snapshot has been loaded to avoid notifying on page load
+  const isAnnouncementsInitialLoadRef = useRef(true);
+  const knownAnnouncementIdsRef = useRef<Set<string>>(new Set());
+
   // Real-time Firestore sync & Initial connection test
   useEffect(() => {
     testFirestoreConnection();
@@ -57,7 +61,29 @@ export function useHRData() {
     // Subscribe to Firestore collections
     const unsubAnnouncements = subscribeCollection<Announcement>(
       'announcements',
-      (items) => setAnnouncements(items),
+      (items) => {
+        setAnnouncements(items);
+
+        // Detect newly arrived announcements published from other devices or sessions
+        if (isAnnouncementsInitialLoadRef.current) {
+          isAnnouncementsInitialLoadRef.current = false;
+          items.forEach((item) => knownAnnouncementIdsRef.current.add(item.id));
+        } else {
+          const newItems = items.filter((item) => !knownAnnouncementIdsRef.current.has(item.id));
+          if (newItems.length > 0) {
+            newItems.forEach((item) => {
+              knownAnnouncementIdsRef.current.add(item.id);
+              // Trigger local push alert
+              triggerLocalPushNotification({
+                title: `📢 ${item.title}`,
+                body: item.content.slice(0, 110) + (item.content.length > 110 ? '...' : ''),
+                url: `/?announcement=${item.id}`,
+                tag: `announcement-${item.id}`
+              });
+            });
+          }
+        }
+      },
       INITIAL_ANNOUNCEMENTS
     );
 

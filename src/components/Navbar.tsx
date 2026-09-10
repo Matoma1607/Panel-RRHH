@@ -30,7 +30,8 @@ import {
 import {
   isPushNotificationSupported,
   getNotificationPermission,
-  subscribeToPushNotifications
+  subscribeToPushNotifications,
+  triggerLocalPushNotification
 } from '../services/pushNotificationService';
 
 interface NavbarProps {
@@ -378,15 +379,31 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {/* Acceso directo a activar notificaciones al celular */}
                   {pushStatus !== 'unsupported' && (
-                    <div className="pt-2 border-t border-[#dbe2dc]/70">
+                    <div className="pt-2 border-t border-[#dbe2dc]/70 space-y-1.5">
                       {pushStatus === 'granted' ? (
-                        <div className="flex items-center justify-between px-2 py-1.5 bg-emerald-50 text-emerald-800 rounded text-[11px] font-semibold border border-emerald-200">
-                          <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            Avisos al celular activos
-                          </span>
-                          <span className="text-[10px] text-emerald-600 font-bold">✓ OK</span>
-                        </div>
+                        <>
+                          <div className="flex items-center justify-between px-2 py-1.5 bg-emerald-50 text-emerald-800 rounded text-[11px] font-semibold border border-emerald-200">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              Avisos al celular activos
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-bold">✓ OK</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerLocalPushNotification({
+                                title: '🔔 Prueba de Notificación SOLMAR',
+                                body: '¡Funciona correctamente! Recibirás avisos de novedades y cumpleaños.',
+                                url: '/',
+                                tag: 'test-push-' + Date.now()
+                              });
+                            }}
+                            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 text-[10px] text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                          >
+                            <span>Probar aviso en mi pantalla</span>
+                          </button>
+                        </>
                       ) : (
                         <button
                           type="button"
