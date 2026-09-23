@@ -10,7 +10,8 @@ import {
   MapPin,
   Edit2,
   Calendar,
-  Sparkles
+  Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -116,36 +117,96 @@ export const Navigation: React.FC<NavigationProps> = ({
           </nav>
         </div>
 
-        {/* Resumen del mes (Compacto) */}
-        <div className="bg-white rounded-lg border border-[#dbe2dc] p-3 shadow-2xs">
-          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[#dbe2dc]/70">
+        {/* Resumen del mes (Compacto e Interactivo) */}
+        <div className="bg-white rounded-lg border border-[#dbe2dc] p-2.5 shadow-2xs">
+          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#dbe2dc]/70">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#0f2620]/70">
               Resumen del mes
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#1c3d34]" />
           </div>
 
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="text-[11px]">Comunicados nuevos</span>
-              <span className="font-bold text-[#0f2620] bg-[#eef1ee] px-1.5 py-0.5 rounded text-[11px]">
-                {newAnnouncementsCount || 3}
+          <div className="space-y-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('feed')}
+              className={`w-full group flex items-center justify-between px-2 py-1.5 rounded-md text-left transition-all cursor-pointer ${
+                activeTab === 'feed'
+                  ? 'bg-[#eef1ee] text-[#0f2620] font-semibold'
+                  : 'text-slate-600 hover:bg-[#f7f9f7] hover:text-[#0f2620]'
+              }`}
+              title="Ver Novedades y Comunicados"
+            >
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] truncate group-hover:underline decoration-[#0f2620]/40 underline-offset-2">
+                  Comunicados nuevos
+                </span>
+                <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-[#0f2620] transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 shrink-0" />
+              </div>
+              <span
+                className={`font-bold px-1.5 py-0.5 rounded text-[11px] shrink-0 transition-colors ${
+                  activeTab === 'feed'
+                    ? 'bg-[#0f2620] text-white'
+                    : 'text-[#0f2620] bg-[#eef1ee] group-hover:bg-[#0f2620] group-hover:text-white'
+                }`}
+              >
+                {newAnnouncementsCount}
               </span>
-            </div>
+            </button>
 
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="text-[11px]">Docs actualizados</span>
-              <span className="font-bold text-[#0f2620] bg-[#eef1ee] px-1.5 py-0.5 rounded text-[11px]">
-                {updatedDocsCount || 2}
+            <button
+              type="button"
+              onClick={() => setActiveTab('documents')}
+              className={`w-full group flex items-center justify-between px-2 py-1.5 rounded-md text-left transition-all cursor-pointer ${
+                activeTab === 'documents'
+                  ? 'bg-[#eef1ee] text-[#0f2620] font-semibold'
+                  : 'text-slate-600 hover:bg-[#f7f9f7] hover:text-[#0f2620]'
+              }`}
+              title="Ver Documentos de RRHH"
+            >
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] truncate group-hover:underline decoration-[#0f2620]/40 underline-offset-2">
+                  Docs actualizados
+                </span>
+                <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-[#0f2620] transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 shrink-0" />
+              </div>
+              <span
+                className={`font-bold px-1.5 py-0.5 rounded text-[11px] shrink-0 transition-colors ${
+                  activeTab === 'documents'
+                    ? 'bg-[#0f2620] text-white'
+                    : 'text-[#0f2620] bg-[#eef1ee] group-hover:bg-[#0f2620] group-hover:text-white'
+                }`}
+              >
+                {updatedDocsCount}
               </span>
-            </div>
+            </button>
 
-            <div className="flex items-center justify-between text-slate-600">
-              <span className="text-[11px]">Festejos del mes</span>
-              <span className="font-bold text-[#a98a3f] bg-[#a98a3f]/10 px-1.5 py-0.5 rounded text-[11px]">
-                {upcomingCelebrationsCount || 5}
+            <button
+              type="button"
+              onClick={() => setActiveTab('celebrations')}
+              className={`w-full group flex items-center justify-between px-2 py-1.5 rounded-md text-left transition-all cursor-pointer ${
+                activeTab === 'celebrations'
+                  ? 'bg-[#a98a3f]/15 text-[#a98a3f] font-semibold'
+                  : 'text-slate-600 hover:bg-[#a98a3f]/10 hover:text-[#0f2620]'
+              }`}
+              title="Ver Festejos y Cumpleaños"
+            >
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] truncate group-hover:underline decoration-[#a98a3f]/40 underline-offset-2">
+                  Festejos del mes
+                </span>
+                <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-[#a98a3f] transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 shrink-0" />
+              </div>
+              <span
+                className={`font-bold px-1.5 py-0.5 rounded text-[11px] shrink-0 transition-colors ${
+                  activeTab === 'celebrations'
+                    ? 'bg-[#a98a3f] text-white'
+                    : 'text-[#a98a3f] bg-[#a98a3f]/10 group-hover:bg-[#a98a3f] group-hover:text-white'
+                }`}
+              >
+                {upcomingCelebrationsCount}
               </span>
-            </div>
+            </button>
           </div>
         </div>
 
